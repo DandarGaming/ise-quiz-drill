@@ -1,0 +1,5 @@
+/* Quiz pages only. Do not import from blog layouts: the base layer resets
+   headings, lists and margins that the blog styles rely on. */
+@tailwind base;
+@tailwind components;
+@tailwind utilities;

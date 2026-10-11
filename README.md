@@ -1,63 +1,54 @@
-# Astro Starter Kit: Blog
+# Brightspace Quiz Simulator
+
+A practice tool that recreates the Brightspace quiz interface, so students can
+take mock tests built from their own notes. It runs entirely in the browser:
+quizzes and attempts are stored in localStorage, with no backend.
+
+The quiz is being moved over from a prototype in small slices (see
+[ADR-003](docs/adr/ADR-003-pivot-to-quiz-simulator.md)). Until that is done,
+the original blog still lives at `/blog` and a preview of every question type
+is at `/quiz`.
+
+## Stack
+
+- [Astro](https://astro.build) with the Node adapter (SSR server plus
+  prerendered pages)
+- React islands for the quiz UI, styled with Tailwind CSS on quiz pages only
+  ([ADR-004](docs/adr/ADR-004-scope-tailwind-to-quiz-pages.md))
+- Vitest and Testing Library for tests, ESLint and Prettier for code style
+- AWS CDK for infrastructure: S3 and CloudFront for the static site, ECR for
+  the container image
+
+## Getting started
+
+Requires Node 22.12 or later.
 
 ```sh
-npm create astro@latest -- --template blog
+npm ci
+npm run dev
 ```
 
-> 🧑‍🚀 **Seasoned astronaut?** Delete this file. Have fun!
+| Command                 | What it does                             |
+| ----------------------- | ---------------------------------------- |
+| `npm run dev`           | Start the dev server on `localhost:4321` |
+| `npm run build`         | Build the site into `dist/`              |
+| `npm run preview`       | Serve the production build               |
+| `npm run lint`          | Run ESLint                               |
+| `npm run check`         | Type check with `astro check`            |
+| `npm run test:unit:run` | Run the Vitest suite once                |
+| `npm run format:check`  | Check formatting with Prettier           |
 
-Features:
+## CI and deployment
 
-- ✅ Minimal styling (make it your own!)
-- ✅ 100/100 Lighthouse performance
-- ✅ SEO-friendly with canonical URLs and Open Graph data
-- ✅ Sitemap support
-- ✅ RSS Feed support
-- ✅ Markdown & MDX support
+- **CI** (`.github/workflows/ci.yml`) runs format check, lint, type check and
+  tests on every pull request and push to `main`.
+- **Deploy** (`.github/workflows/deploy-static.yml`) builds the site and runs
+  `cdk synth` on pull requests. On `main` it deploys the prerendered pages to
+  S3 and CloudFront and smoke tests the live URL.
+- The `Dockerfile` builds the SSR server image, which exposes `/api/health`.
 
-## 🚀 Project Structure
+## Documentation
 
-Inside of your Astro project, you'll see the following folders and files:
-
-```text
-├── public/
-├── src/
-│   ├── assets/
-│   ├── components/
-│   ├── content/
-│   ├── layouts/
-│   └── pages/
-├── astro.config.mjs
-├── README.md
-├── package.json
-└── tsconfig.json
-```
-
-Astro looks for `.astro` or `.md` files in the `src/pages/` directory. Each page is exposed as a route based on its file name.
-
-There's nothing special about `src/components/`, but that's where we like to put any Astro/React/Vue/Svelte/Preact components.
-
-The `src/content/` directory contains "collections" of related Markdown and MDX documents. Use `getCollection()` to retrieve posts from `src/content/blog/`, and type-check your frontmatter using an optional schema. See [Astro's Content Collections docs](https://docs.astro.build/en/guides/content-collections/) to learn more.
-
-Any static assets, like images, can be placed in the `public/` directory.
-
-## 🧞 Commands
-
-All commands are run from the root of the project, from a terminal:
-
-| Command                   | Action                                           |
-| :------------------------ | :----------------------------------------------- |
-| `npm install`             | Installs dependencies                            |
-| `npm run dev`             | Starts local dev server at `localhost:4321`      |
-| `npm run build`           | Build your production site to `./dist/`          |
-| `npm run preview`         | Preview your build locally, before deploying     |
-| `npm run astro ...`       | Run CLI commands like `astro add`, `astro check` |
-| `npm run astro -- --help` | Get help using the Astro CLI                     |
-
-## 👀 Want to learn more?
-
-Check out [our documentation](https://docs.astro.build) or jump into our [Discord server](https://astro.build/chat).
-
-## Credit
-
-This theme is based off of the lovely [Bear Blog](https://github.com/HermanMartinus/bearblog/).
+- [Architecture decisions](docs/adr/)
+- [Product requirements and quiz spec](docs/product/)
+- [Workflow, board and label rules](docs/process/workflow.md)

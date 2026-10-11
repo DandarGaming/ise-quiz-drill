@@ -1,0 +1,33 @@
+# Labels that actions/labeler adds to pull requests. Type comes from the branch
+# name (type/<issue>-slug), area from the changed paths. Priority and the
+# product areas without code yet are set by hand.
+
+'type: feat':
+  - head-branch: ['^feat/']
+'type: fix':
+  - head-branch: ['^fix/']
+'type: docs':
+  - head-branch: ['^docs/']
+'type: test':
+  - head-branch: ['^test/']
+'type: refactor':
+  - head-branch: ['^refactor/']
+'type: build':
+  - head-branch: ['^build/']
+'type: ci':
+  - head-branch: ['^ci/']
+'type: chore':
+  - head-branch: ['^chore/']
+
+'area: infra':
+  - changed-files:
+      - any-glob-to-any-file:
+          - 'cdk/**'
+          - 'Dockerfile'
+          - '.dockerignore'
+          - '.github/**'
+'area: quiz-taking':
+  - changed-files:
+      - any-glob-to-any-file:
+          - 'src/components/quiz/**'
+          - 'src/types/quiz.ts'

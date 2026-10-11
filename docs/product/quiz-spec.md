@@ -60,4 +60,4 @@ Brightspace Quiz Simulator supports 2 presentation templates:
 
 - Summary header: Total score (e.g., "8.5 / 10"), time taken, status.
 - Question review: Student answer vs correct answer, points per question ("1/1 point"), and explanation.
-- Scoring: Multiple select gives partial credit; short answer and blanks ignore case and surrounding spaces.
+- Scoring: Every question type is all or nothing, so a question earns full points only when the whole answer is correct. Short answers and blanks ignore case and surrounding spaces; a short answer may list several accepted answers.

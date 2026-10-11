@@ -48,7 +48,7 @@ Create mock test, start quiz, take quiz, submit, view result and review.
 ### 3.2 Question types
 
 1. Multiple choice: single choice with radio buttons.
-2. Multiple select: checkboxes, with partial credit.
+2. Multiple select: checkboxes, all or nothing (no partial credit).
 3. True or false.
 4. Short answer: text input.
 5. Fill in the blanks: several text inputs inside one prompt.

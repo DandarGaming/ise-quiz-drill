@@ -6,6 +6,14 @@ updates:
     schedule:
       interval: 'weekly'
     open-pull-requests-limit: 5
+    groups:
+      # One PR a week for everything that should not break the build
+      minor-and-patch:
+        update-types: ['minor', 'patch']
+    ignore:
+      # @astrojs/check only supports TypeScript 5 and 6
+      - dependency-name: 'typescript'
+        update-types: ['version-update:semver-major']
 
   # Check CDK package.json
   - package-ecosystem: 'npm'
@@ -13,6 +21,13 @@ updates:
     schedule:
       interval: 'weekly'
     open-pull-requests-limit: 5
+    groups:
+      minor-and-patch:
+        update-types: ['minor', 'patch']
+    ignore:
+      # Bump Node type majors together with the Node runtime, not on their own
+      - dependency-name: '@types/node'
+        update-types: ['version-update:semver-major']
 
   # Check Github Actions workflows
   - package-ecosystem: 'github-actions'
@@ -20,3 +35,6 @@ updates:
     schedule:
       interval: 'weekly'
     open-pull-requests-limit: 5
+    groups:
+      actions:
+        patterns: ['*']

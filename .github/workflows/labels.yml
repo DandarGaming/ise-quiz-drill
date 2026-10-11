@@ -1,0 +1,31 @@
+name: Labels
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/labels.yml'
+      - '.github/workflows/labels.yml'
+  pull_request:
+    branches: [main]
+    paths:
+      - '.github/labels.yml'
+      - '.github/workflows/labels.yml'
+
+jobs:
+  sync:
+    name: sync
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      issues: write
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v7
+
+      # Pull requests only preview the changes; main applies them
+      - name: Sync labels from .github/labels.yml
+        uses: crazy-max/ghaction-github-labeler@v6
+        with:
+          dry-run: ${{ github.event_name == 'pull_request' }}

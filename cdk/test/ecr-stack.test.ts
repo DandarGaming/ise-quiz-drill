@@ -20,6 +20,25 @@ describe('EcrStack', () => {
     });
   });
 
+  test('keeps only the 20 most recent images', () => {
+    const policy = template().findResources('AWS::ECR::Repository');
+    const [repository] = Object.values(policy);
+    const rules = JSON.parse(
+      repository.Properties.LifecyclePolicy.LifecyclePolicyText,
+    ).rules;
+
+    expect(rules).toEqual([
+      expect.objectContaining({
+        selection: expect.objectContaining({
+          tagStatus: 'any',
+          countType: 'imageCountMoreThan',
+          countNumber: 20,
+        }),
+        action: { type: 'expire' },
+      }),
+    ]);
+  });
+
   test('outputs the repository URI', () => {
     template().hasOutput('RepositoryUri', {});
   });

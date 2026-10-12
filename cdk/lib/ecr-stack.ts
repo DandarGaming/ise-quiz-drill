@@ -9,6 +9,8 @@ export class EcrStack extends cdk.Stack {
       repositoryName: 'ise-quiz-drill',
       imageScanOnPush: true,
       removalPolicy: cdk.RemovalPolicy.RETAIN,
+      // CI pushes an image on every merge, so old ones are cleaned up
+      lifecycleRules: [{ maxImageCount: 20 }],
     });
 
     new cdk.CfnOutput(this, 'RepositoryUri', {

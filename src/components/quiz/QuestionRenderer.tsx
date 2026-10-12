@@ -69,8 +69,13 @@ const KEYWORDS = [
 ];
 const BUILTINS = ['RangeError', 'Math', 'ceil'];
 
-// Line-numbered code block with light syntax colouring
-export const CodeBlock: React.FC<{ code: string }> = ({ code }) => {
+// Line-numbered code block with light syntax colouring. Memoised because
+// scroll mode renders every question and the colouring is the slow part.
+export const CodeBlock = React.memo(function CodeBlock({
+  code,
+}: {
+  code: string;
+}) {
   const lines = code.split('\n');
 
   const renderHighlightedLine = (line: string) => {
@@ -146,7 +151,7 @@ export const CodeBlock: React.FC<{ code: string }> = ({ code }) => {
       </div>
     </div>
   );
-};
+});
 
 export const QuestionRenderer: React.FC<QuestionRendererProps> = ({
   question,

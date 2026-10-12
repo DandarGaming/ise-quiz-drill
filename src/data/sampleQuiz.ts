@@ -1,7 +1,7 @@
 import type { Question, QuizConfig } from '../types/quiz';
 
-// Sample quiz with one question of every type. Used for the preview page and
-// as the example JSON in the importer.
+// One question of every type. Used by Try a sample and the importer's
+// Load sample button.
 const questions: Question[] = [
   {
     id: 'demo-mcq',

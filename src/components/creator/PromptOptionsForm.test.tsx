@@ -26,33 +26,39 @@ function Harness({
   );
 }
 
+const last = (fn: ReturnType<typeof vi.fn>) =>
+  fn.mock.lastCall?.[0] as PromptOptions;
+
 describe('PromptOptionsForm', () => {
   it('edits the title, question count and time limit through labelled fields', async () => {
     const onChange = vi.fn();
     render(<Harness onChange={onChange} />);
 
     await userEvent.type(
-      screen.getByLabelText('Test title (optional)'),
+      screen.getByLabelText('Test Title (Optional)'),
       'Midterm',
     );
-    const count = screen.getByLabelText('Number of questions');
+    const count = screen.getByLabelText('Number of Questions');
     await userEvent.clear(count);
     await userEvent.type(count, '20');
 
-    expect(onChange).toHaveBeenLastCalledWith(
-      expect.objectContaining({ title: 'Midterm', questionCount: 20 }),
-    );
-    expect(screen.getByLabelText('Time limit (minutes)')).toHaveValue(15);
+    expect(last(onChange)).toMatchObject({
+      title: 'Midterm',
+      questionCount: 20,
+    });
+    expect(screen.getByLabelText('Time Limit (Minutes)')).toHaveValue(15);
   });
 
-  it('picks the difficulty from a radio group and shows the mix for custom', async () => {
+  it('picks the difficulty with toggle buttons and shows the mix for custom', async () => {
     render(<Harness />);
-    const group = screen.getByRole('radiogroup', { name: 'Difficulty' });
-    expect(within(group).getByRole('radio', { name: 'Auto' })).toBeChecked();
+    const group = screen.getByRole('group', { name: 'Difficulty Level' });
+    expect(
+      within(group).getByRole('button', { name: 'Auto (AI Decides)' }),
+    ).toHaveAttribute('aria-pressed', 'true');
     expect(screen.queryByLabelText('Easy %')).toBeNull();
 
     await userEvent.click(
-      within(group).getByRole('radio', { name: 'Custom mix' }),
+      within(group).getByRole('button', { name: 'Custom % Breakdown' }),
     );
 
     expect(screen.getByLabelText('Easy %')).toHaveValue(30);
@@ -60,41 +66,88 @@ describe('PromptOptionsForm', () => {
 
   it('flags a custom mix that does not add up to 100%', async () => {
     render(<Harness />);
-    await userEvent.click(screen.getByRole('radio', { name: 'Custom mix' }));
+    await userEvent.click(
+      screen.getByRole('button', { name: 'Custom % Breakdown' }),
+    );
 
     const hard = screen.getByLabelText('Hard %');
     await userEvent.clear(hard);
     await userEvent.type(hard, '10');
+    await userEvent.tab();
 
     expect(hard).toHaveAttribute('aria-invalid', 'true');
     expect(hard).toHaveAccessibleDescription(
       'The difficulty mix must add up to 100% (now 90%).',
     );
+    expect(screen.getByText(/Current sum:/)).toHaveTextContent('90%');
   });
 
-  it('toggles question types with checkboxes', async () => {
-    const onChange = vi.fn();
-    render(<Harness onChange={onChange} />);
-    const group = screen.getByRole('group', { name: 'Question types' });
-
-    await userEvent.click(
-      within(group).getByRole('checkbox', { name: 'True / false' }),
-    );
-
-    expect(onChange.mock.lastCall?.[0].types).not.toContain('true-false');
-  });
-
-  it('turns on proctoring options', async () => {
+  it('switches the layout mode', async () => {
     const onChange = vi.fn();
     render(<Harness onChange={onChange} />);
 
     await userEvent.click(
-      screen.getByRole('checkbox', { name: 'Enable proctoring' }),
+      screen.getByRole('button', { name: 'Scroll Form (All Questions)' }),
     );
 
-    expect(onChange.mock.lastCall?.[0].antiCheat.enabled).toBe(true);
+    expect(last(onChange).templateMode).toBe('single-page');
+  });
+
+  it('toggles question types and warns when none is left', async () => {
+    const onChange = vi.fn();
+    render(<Harness onChange={onChange} />);
+    const group = screen.getByRole('group', {
+      name: 'Included Question Types',
+    });
+
     expect(
-      screen.getByRole('checkbox', { name: 'Lock to this tab' }),
-    ).toBeEnabled();
+      within(group).getByRole('checkbox', { name: 'Multi-Blank' }),
+    ).not.toBeChecked();
+    await userEvent.click(
+      within(group).getByRole('checkbox', { name: 'True / False' }),
+    );
+    expect(last(onChange).types).not.toContain('true-false');
+
+    for (const box of within(group).getAllByRole('checkbox', {
+      checked: true,
+    })) {
+      await userEvent.click(box);
+    }
+    expect(
+      screen.getByText(/You must select at least one question type/),
+    ).toBeInTheDocument();
+  });
+
+  it('adds preset instructions to the notes', async () => {
+    const onChange = vi.fn();
+    render(<Harness onChange={onChange} />);
+
+    await userEvent.click(
+      screen.getByRole('button', { name: '+ Scenario-Based' }),
+    );
+    await userEvent.click(
+      screen.getByRole('button', { name: '+ Tricky Edge Cases' }),
+    );
+
+    expect(last(onChange).notes).toBe(
+      'Structure questions around real-world application scenarios and architectural design problems.\nFocus on tricky edge cases, subtle traps, and common student misunderstandings.',
+    );
+  });
+
+  it('shows the proctoring options once anti-cheat is enabled', async () => {
+    const onChange = vi.fn();
+    render(<Harness onChange={onChange} />);
+    expect(
+      screen.queryByRole('checkbox', { name: 'Tab & Focus Lock' }),
+    ).toBeNull();
+
+    await userEvent.click(
+      screen.getByRole('checkbox', { name: 'Enable Anti-Cheat' }),
+    );
+
+    expect(last(onChange).antiCheat.enabled).toBe(true);
+    expect(
+      screen.getByRole('checkbox', { name: 'Require Fullscreen' }),
+    ).toBeChecked();
   });
 });

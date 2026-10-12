@@ -1,8 +1,7 @@
-import { useMemo, useState } from 'react';
-import { Copy, Play, Upload } from 'lucide-react';
+import React, { useEffect, useMemo, useState } from 'react';
+import { AlertCircle, Check, Copy, Info, Play, Upload } from 'lucide-react';
 import type { QuizConfig } from '../../types/quiz';
 import { parseQuizJson, type ImportSettings } from '../../utils/quizSchema';
-import { sampleQuiz } from '../../data/sampleQuiz';
 
 export interface JsonImporterProps {
   settings: ImportSettings;
@@ -10,111 +9,217 @@ export interface JsonImporterProps {
 }
 
 const fixRequest = (error: string) =>
-  `The JSON you generated has a validation error:\n"${error}"\n\nPlease fix it and output the complete, valid JSON again.`;
+  `The JSON response you generated has a validation error:\n"${error}"\n\nPlease fix this syntax error and output the complete valid JSON payload again.`;
 
-export function JsonImporter({ settings, onStart }: JsonImporterProps) {
-  const [text, setText] = useState('');
+export const JsonImporter: React.FC<JsonImporterProps> = ({
+  settings,
+  onStart,
+}) => {
+  const [jsonInput, setJsonInput] = useState('');
+  const [isDragOver, setIsDragOver] = useState(false);
+  const [errorCopied, setErrorCopied] = useState(false);
+
   const result = useMemo(
-    () => (text.trim() ? parseQuizJson(text, settings) : null),
-    [text, settings],
+    () => (jsonInput.trim() ? parseQuizJson(jsonInput, settings) : null),
+    [jsonInput, settings],
   );
-  const error = result && !result.ok ? result.error : null;
-  const quiz = result?.ok ? result.quiz : null;
+  const validationError = result && !result.ok ? result.error : null;
+  const parsedQuiz = result?.ok ? result.quiz : null;
 
-  const upload = async (file: File | undefined) => {
-    if (file) setText(await file.text());
+  useEffect(() => {
+    if (!errorCopied) return;
+    const id = setTimeout(() => setErrorCopied(false), 2000);
+    return () => clearTimeout(id);
+  }, [errorCopied]);
+
+  const handleFileUpload = async (file: File | undefined) => {
+    if (file) setJsonInput(await file.text());
+  };
+
+  const handleDrop = (e: React.DragEvent) => {
+    e.preventDefault();
+    setIsDragOver(false);
+    handleFileUpload(e.dataTransfer.files?.[0]);
+  };
+
+  const handleCopyErrorMessage = async () => {
+    if (!validationError) return;
+    try {
+      await navigator.clipboard.writeText(fixRequest(validationError));
+      setErrorCopied(true);
+    } catch {
+      // Clipboard blocked; the error text stays on screen
+    }
   };
 
   return (
-    <section
-      aria-labelledby="json-importer-title"
-      className="space-y-4 rounded-xl border border-gray-200 bg-white p-6"
-    >
-      <div className="flex flex-wrap items-center justify-between gap-3">
+    <section aria-labelledby="json-importer-title" className="space-y-4">
+      <div className="flex items-center gap-2">
+        <span className="bg-[#006fbf] text-white px-2.5 py-1 rounded text-xs font-bold uppercase tracking-wider">
+          Step 3
+        </span>
         <h2
           id="json-importer-title"
           className="text-xl font-bold text-gray-900"
         >
-          Import the AI's answer
+          Paste JSON Payload or Drag & Drop File
         </h2>
-        <div className="flex items-center gap-2">
-          <button
-            type="button"
-            onClick={() => setText(JSON.stringify(sampleQuiz, null, 2))}
-            className="rounded-lg border border-gray-300 bg-gray-50 px-3 py-1.5 text-sm font-bold text-gray-800 hover:bg-gray-100"
-          >
-            Load sample
-          </button>
-          <label className="flex cursor-pointer items-center gap-2 rounded-lg border border-gray-300 bg-gray-50 px-3 py-1.5 text-sm font-bold text-gray-800 focus-within:ring-2 focus-within:ring-[#006fbf] hover:bg-gray-100">
-            <Upload aria-hidden="true" className="h-4 w-4" />
-            Upload a .json file
+      </div>
+
+      <div
+        onDragOver={(e) => {
+          e.preventDefault();
+          setIsDragOver(true);
+        }}
+        onDragLeave={() => setIsDragOver(false)}
+        onDrop={handleDrop}
+        className={`border-2 border-dashed rounded-xl p-6 text-center transition-all ${
+          isDragOver
+            ? 'border-[#006fbf] bg-blue-50/50'
+            : 'border-gray-300 hover:border-gray-400 bg-gray-50/50'
+        }`}
+      >
+        <Upload
+          aria-hidden="true"
+          className="w-8 h-8 text-gray-400 mx-auto mb-2"
+        />
+        <p className="text-sm font-semibold text-gray-700">
+          Drag & Drop your{' '}
+          <code className="bg-gray-200 px-1.5 py-0.5 rounded text-xs">
+            .json
+          </code>{' '}
+          file here, or{' '}
+          <label className="text-[#006fbf] hover:underline cursor-pointer focus-within:underline">
+            browse files from computer
             <input
               type="file"
-              accept=".json,application/json"
-              onChange={(e) => upload(e.target.files?.[0])}
+              accept=".json"
               className="sr-only"
+              onChange={(e) => handleFileUpload(e.target.files?.[0])}
             />
           </label>
-        </div>
+        </p>
       </div>
 
       <div>
-        <label
-          htmlFor="quiz-json"
-          className="mb-1.5 block text-xs font-bold uppercase tracking-wider text-gray-700"
-        >
-          Quiz JSON
-        </label>
         <textarea
-          id="quiz-json"
-          rows={10}
-          value={text}
-          onChange={(e) => setText(e.target.value)}
-          aria-invalid={error ? true : undefined}
-          aria-describedby={error ? 'quiz-json-error' : undefined}
+          aria-label="Quiz JSON"
+          value={jsonInput}
+          onChange={(e) => setJsonInput(e.target.value)}
+          aria-invalid={validationError ? true : undefined}
+          aria-describedby={validationError ? 'json-import-error' : undefined}
           spellCheck={false}
-          placeholder='Paste the JSON the AI returned, starting with {"title": ...'
-          className="w-full rounded-lg border border-gray-300 p-3 font-mono text-xs outline-none focus:ring-2 focus:ring-[#006fbf] aria-[invalid=true]:border-red-500"
+          placeholder="Paste the JSON response generated by AI here..."
+          rows={10}
+          className="w-full font-mono text-xs p-4 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#006fbf] focus:border-transparent outline-none custom-scrollbar text-gray-900 bg-white"
         />
       </div>
 
-      {error && (
+      {validationError && (
         <div
           role="alert"
-          className="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-red-200 bg-red-50 p-4"
+          className="bg-red-50 border border-red-200 text-red-800 p-5 rounded-xl space-y-3 animate-in fade-in shadow-sm"
         >
-          <p
-            id="quiz-json-error"
-            className="text-sm font-semibold text-red-800"
-          >
-            {error}
-          </p>
-          <button
-            type="button"
-            onClick={() => navigator.clipboard?.writeText(fixRequest(error))}
-            className="flex items-center gap-2 rounded-lg bg-red-700 px-3 py-1.5 text-sm font-bold text-white hover:bg-red-800"
-          >
-            <Copy aria-hidden="true" className="h-4 w-4" />
-            Copy fix request
-          </button>
+          <div className="flex items-start justify-between gap-4">
+            <div className="flex items-start gap-3">
+              <AlertCircle
+                aria-hidden="true"
+                className="w-5 h-5 text-red-600 flex-shrink-0 mt-0.5"
+              />
+              <div>
+                <p className="font-bold text-sm text-red-900">
+                  JSON Syntax / Validation Error:
+                </p>
+                <p
+                  id="json-import-error"
+                  className="text-xs font-mono bg-red-100/80 border border-red-200 p-2 rounded mt-1.5 text-red-950"
+                >
+                  {validationError}
+                </p>
+              </div>
+            </div>
+
+            <button
+              type="button"
+              onClick={handleCopyErrorMessage}
+              className={`px-4 py-2 rounded-lg font-bold text-xs transition-all flex items-center gap-2 cursor-pointer flex-shrink-0 shadow-sm ${
+                errorCopied
+                  ? 'bg-green-600 text-white'
+                  : 'bg-red-600 hover:bg-red-700 text-white'
+              }`}
+            >
+              {errorCopied ? (
+                <>
+                  <Check aria-hidden="true" className="w-4 h-4" /> Error Copied!
+                </>
+              ) : (
+                <>
+                  <Copy aria-hidden="true" className="w-4 h-4" /> Copy Error for
+                  AI Fix
+                </>
+              )}
+            </button>
+          </div>
+
+          <div className="bg-white/80 border border-red-200 rounded-lg p-3 text-xs text-gray-700 flex items-center gap-2">
+            <Info
+              aria-hidden="true"
+              className="w-4 h-4 text-[#006fbf] flex-shrink-0"
+            />
+            <span>
+              💡 <strong>Tip:</strong> Click{' '}
+              <em>&quot;Copy Error for AI Fix&quot;</em> above and paste it back
+              to your AI agent in the same chat thread so it can automatically
+              fix the JSON formatting error!
+            </span>
+          </div>
         </div>
       )}
 
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <p role="status" className="text-sm font-semibold text-green-800">
-          {quiz &&
-            `${quiz.title}: ${quiz.questions.length} questions, ${quiz.timeLimitMinutes} minutes`}
-        </p>
-        <button
-          type="button"
-          disabled={!quiz}
-          onClick={() => quiz && onStart(quiz)}
-          className="flex items-center gap-2 rounded-lg bg-[#006fbf] px-6 py-2.5 font-bold text-white hover:bg-[#005694] disabled:cursor-not-allowed disabled:bg-gray-300 disabled:text-gray-500"
+      {parsedQuiz && (
+        <div
+          role="status"
+          className="bg-green-50 border border-green-200 text-green-800 px-5 py-4 rounded-xl flex items-center justify-between animate-in fade-in shadow-sm"
         >
-          <Play aria-hidden="true" className="h-4 w-4" />
-          Start quiz
-        </button>
-      </div>
+          <div className="space-y-1">
+            <div className="flex items-center gap-2">
+              <Check
+                aria-hidden="true"
+                className="w-5 h-5 text-green-600 stroke-[3]"
+              />
+              <span className="font-bold text-base text-gray-900">
+                {parsedQuiz.title}
+              </span>
+              <span className="bg-green-200 text-green-900 text-xs px-2 py-0.5 rounded font-semibold">
+                {parsedQuiz.courseCode}
+              </span>
+            </div>
+            <p className="text-xs text-gray-600 pl-7">
+              Total Questions:{' '}
+              <strong className="text-gray-900">
+                {parsedQuiz.questions.length}
+              </strong>{' '}
+              | Time Limit:{' '}
+              <strong className="text-gray-900">
+                {parsedQuiz.timeLimitMinutes} minutes
+              </strong>{' '}
+              |{' '}
+              {parsedQuiz.templateMode === 'paginated'
+                ? '1 Question / Page'
+                : 'All Questions on One Page'}
+            </p>
+          </div>
+
+          <button
+            type="button"
+            onClick={() => onStart(parsedQuiz)}
+            className="px-8 py-3 bg-[#006fbf] hover:bg-[#005694] text-white rounded-lg font-bold text-base transition-all flex items-center gap-2 shadow-md hover:shadow-lg cursor-pointer transform hover:-translate-y-0.5 active:translate-y-0"
+          >
+            <Play aria-hidden="true" className="w-5 h-5 fill-current" /> Start
+            Quiz Simulation Now
+          </button>
+        </div>
+      )}
     </section>
   );
-}
+};

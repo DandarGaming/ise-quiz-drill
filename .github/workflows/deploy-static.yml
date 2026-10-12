@@ -28,6 +28,9 @@ jobs:
       - name: Install CDK Dependencies
         run: cd cdk && npm ci
 
+      - name: Test CDK Stacks
+        run: cd cdk && npm test
+
       - name: Configure AWS Credentials
         if: github.event_name == 'push'
         uses: aws-actions/configure-aws-credentials@v6

@@ -17,18 +17,18 @@ export interface AntiCheatAlert {
 const blocked: Record<string, [QuizEventType, string, string]> = {
   copy: [
     'copy_attempt',
-    'Tried to copy content',
-    'Copying is disabled during this quiz.',
+    'Attempted to copy content',
+    'Copying text is disabled during this exam.',
   ],
   paste: [
     'paste_attempt',
-    'Tried to paste content',
-    'Pasting is disabled during this quiz.',
+    'Attempted to paste content',
+    'Pasting text is disabled during this exam.',
   ],
   contextmenu: [
     'context_menu_attempt',
-    'Tried to open the context menu',
-    'Right-click is disabled during this quiz.',
+    'Attempted to open context menu (Right-click)',
+    'Right-click is disabled during this exam.',
   ],
 };
 
@@ -58,19 +58,19 @@ export function useAntiCheat(
       handlers.current.onEvent(type, details);
     const onVisibility = () => {
       if (document.visibilityState === 'hidden') {
-        report('focus_lost', 'Switched tab or minimised the browser');
+        report('focus_lost', 'User switched tabs or minimized browser');
       } else {
-        report('focus_regained', 'Came back to the quiz tab');
+        report('focus_regained', 'User returned to the test tab');
         setAlert({
-          title: 'You left the quiz',
+          title: 'Focus Lost Warning',
           message:
-            'Leaving the quiz window has been recorded in the proctoring log.',
+            'It appears you left the exam window. This activity has been recorded in the Audit Trail.',
         });
       }
     };
     const onBlur = () => {
       if (document.visibilityState === 'visible') {
-        report('focus_lost', 'Window lost focus');
+        report('focus_lost', 'Window lost focus (Alt+Tab or clicked outside)');
       }
     };
     const onFocus = () => report('focus_regained', 'Window regained focus');
@@ -109,7 +109,11 @@ export function useAntiCheat(
     const onChange = () => {
       const full = !!document.fullscreenElement;
       setFullscreen(full);
-      if (!full) handlers.current.onEvent('fullscreen_exit', 'Left fullscreen');
+      if (!full)
+        handlers.current.onEvent(
+          'fullscreen_exit',
+          'User exited fullscreen mode',
+        );
     };
     document.addEventListener('fullscreenchange', onChange);
     return () => document.removeEventListener('fullscreenchange', onChange);

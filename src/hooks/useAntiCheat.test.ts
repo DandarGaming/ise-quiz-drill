@@ -57,7 +57,7 @@ describe('useAntiCheat', () => {
       'focus_lost',
       'focus_regained',
     ]);
-    expect(result.current.alert?.title).toBe('You left the quiz');
+    expect(result.current.alert?.title).toBe('Focus Lost Warning');
 
     act(() => result.current.dismissAlert());
     expect(result.current.alert).toBeNull();
@@ -76,7 +76,7 @@ describe('useAntiCheat', () => {
       'context_menu_attempt',
     ]);
     expect(onNotice).toHaveBeenCalledWith(
-      'Copying is disabled during this quiz.',
+      'Copying text is disabled during this exam.',
     );
   });
 

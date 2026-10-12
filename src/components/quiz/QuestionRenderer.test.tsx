@@ -96,17 +96,10 @@ function Harness({
 }
 
 describe('QuestionRenderer', () => {
-  it('shows the question number and points in the header', () => {
+  it('shows the question number in the header', () => {
     render(<Harness question={multiSelect} />);
     expect(
-      screen.getByRole('heading', { name: 'Question 2 (2 points)' }),
-    ).toBeInTheDocument();
-  });
-
-  it('uses singular "point" for one point', () => {
-    render(<Harness question={mcq} />);
-    expect(
-      screen.getByRole('heading', { name: 'Question 1 (1 point)' }),
+      screen.getByRole('heading', { name: 'Question 2' }),
     ).toBeInTheDocument();
   });
 
@@ -180,7 +173,8 @@ describe('QuestionRenderer', () => {
 
     await userEvent.click(screen.getByRole('radio', { name: 'git merge' }));
 
-    expect(screen.getByText('Saved')).toBeInTheDocument();
+    expect(screen.getByText('Saving...')).toBeInTheDocument();
+    expect(await screen.findByText('Saved')).toBeInTheDocument();
   });
 
   it('exposes the flag state and reports toggles', async () => {

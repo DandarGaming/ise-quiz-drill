@@ -1,3 +1,4 @@
+import React from 'react';
 import { ShieldAlert, X } from 'lucide-react';
 
 export interface HeaderBarProps {
@@ -22,7 +23,7 @@ export function formatDuration(seconds: number): string {
 const RADIUS = 9;
 const CIRCUMFERENCE = 2 * Math.PI * RADIUS;
 
-export function HeaderBar({
+export const HeaderBar: React.FC<HeaderBarProps> = ({
   title,
   remainingSeconds,
   totalSeconds,
@@ -30,22 +31,23 @@ export function HeaderBar({
   isProctored = false,
   isWarning = false,
   onExit,
-}: HeaderBarProps) {
+}) => {
   const ratio =
     totalSeconds > 0
-      ? Math.min(1, Math.max(0, remainingSeconds / totalSeconds))
+      ? Math.max(0, Math.min(1, remainingSeconds / totalSeconds))
       : 0;
+  const strokeDashoffset = CIRCUMFERENCE * (1 - ratio);
 
   return (
-    <header className="flex min-h-[68px] flex-shrink-0 items-center justify-between border-b border-gray-200 bg-white px-8 py-4">
+    <header className="bg-white border-b border-gray-200 px-8 py-4 flex items-center justify-between min-h-[68px] select-none flex-shrink-0">
       <div className="flex items-center gap-3">
-        <h1 className="text-2xl font-bold tracking-tight text-gray-900">
+        <h1 className="text-2xl font-bold text-gray-900 tracking-tight">
           {title}
         </h1>
         {isProctored && (
-          <span className="flex items-center gap-1.5 rounded border border-red-200 bg-red-50 px-2.5 py-1 text-xs font-bold uppercase tracking-wider text-red-700">
-            <ShieldAlert aria-hidden="true" className="h-3.5 w-3.5" />
-            Proctoring on
+          <span className="flex items-center gap-1.5 px-2.5 py-1 bg-red-50 text-red-700 border border-red-200 rounded text-xs font-bold uppercase tracking-wider shadow-sm">
+            <ShieldAlert aria-hidden="true" className="w-3.5 h-3.5" />{' '}
+            Proctoring On
           </span>
         )}
       </div>
@@ -55,8 +57,8 @@ export function HeaderBar({
           <div role="timer" className="flex items-center gap-3">
             <svg
               aria-hidden="true"
+              className="w-6 h-6 -rotate-90 flex-shrink-0"
               viewBox="0 0 24 24"
-              className="h-6 w-6 flex-shrink-0 -rotate-90"
             >
               <circle
                 cx="12"
@@ -74,33 +76,37 @@ export function HeaderBar({
                 strokeWidth="2.5"
                 fill="none"
                 strokeDasharray={CIRCUMFERENCE}
-                strokeDashoffset={CIRCUMFERENCE * (1 - ratio)}
+                strokeDashoffset={strokeDashoffset}
                 strokeLinecap="round"
+                className="transition-all duration-1000 ease-linear"
               />
             </svg>
-            <span className="font-mono text-lg tracking-tight text-gray-700">
+
+            <div className="flex items-center gap-1.5 font-mono text-lg tracking-tight">
               <span
-                className={
+                className={`transition-all ${
                   isWarning
-                    ? 'font-black text-black motion-safe:animate-pulse'
-                    : ''
-                }
+                    ? 'font-black text-black motion-safe:animate-[pulse_0.4s_ease-in-out_infinite]'
+                    : 'font-normal text-gray-700'
+                }`}
               >
                 {formatDuration(remainingSeconds)}
               </span>{' '}
-              remaining
-            </span>
+              <span className="font-normal text-gray-700">remaining</span>
+            </div>
           </div>
         )}
+
         <button
           type="button"
-          aria-label="Exit quiz"
           onClick={onExit}
-          className="ml-2 p-1 text-gray-700 hover:text-black"
+          aria-label="Exit quiz"
+          className="text-gray-700 hover:text-black p-1 transition-colors ml-2"
+          title="Exit Quiz"
         >
-          <X aria-hidden="true" className="h-7 w-7 stroke-[2.5]" />
+          <X aria-hidden="true" className="w-7 h-7 stroke-[2.5]" />
         </button>
       </div>
     </header>
   );
-}
+};

@@ -28,7 +28,7 @@ Brightspace Quiz Simulator supports 2 presentation templates:
 
 ### 2.2 Question navigator (Side map)
 
-- Position: Right-hand side panel.
+- Position: Left-hand side panel, next to the question.
 - Components:
   - Question grid: Numbered buttons ("1", "2", "3"...).
   - Status styling:
@@ -39,7 +39,7 @@ Brightspace Quiz Simulator supports 2 presentation templates:
 
 ### 2.3 Question card area
 
-- Header line: "Question 1 (1 point)" + "Flag Question" toggle icon.
+- Header line: "Question 1", a Saving / Saved status and a bookmark toggle to flag the question.
 - Question text: Prompt text.
 - Answer inputs:
   - MCQ: Radio buttons (single choice).

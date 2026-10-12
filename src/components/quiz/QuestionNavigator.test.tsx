@@ -37,7 +37,7 @@ describe('QuestionNavigator', () => {
       within(nav)
         .getAllByRole('heading')
         .map((h) => h.textContent),
-    ).toEqual(['Page 1', 'Page 2']);
+    ).toEqual(['Page 1:', 'Page 2:']);
   });
 
   it('names each button with its number and state', () => {

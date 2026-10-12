@@ -413,7 +413,7 @@ export const QuestionRenderer: React.FC<QuestionRendererProps> = ({
                   >
                     <label
                       htmlFor={inputId}
-                      className={`flex items-center gap-3 flex-1 pr-2 transition-opacity ${
+                      className={`relative flex items-center gap-3 flex-1 pr-2 transition-opacity ${
                         reviewMode ? 'cursor-default' : 'cursor-pointer'
                       } ${isStruck ? 'opacity-40' : 'opacity-100'}`}
                     >

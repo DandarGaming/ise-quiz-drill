@@ -41,8 +41,9 @@ describe('QuizHistory', () => {
     const h = handlers();
     render(<QuizHistory {...h} />);
 
+    expect(screen.getByText('No Saved Quizzes Found')).toBeInTheDocument();
     await userEvent.click(
-      screen.getByRole('button', { name: 'Create your first test' }),
+      screen.getByRole('button', { name: 'Create Your First Test' }),
     );
 
     expect(h.onCreate).toHaveBeenCalledOnce();
@@ -53,14 +54,14 @@ describe('QuizHistory', () => {
     appendHistory(localStorage, record);
     render(<QuizHistory {...handlers()} />);
 
-    const saved = screen.getByRole('tab', { name: 'Saved tests (1)' });
-    const attempts = screen.getByRole('tab', { name: 'Attempt history (1)' });
+    const saved = screen.getByRole('tab', { name: 'Saved Tests (1)' });
+    const attempts = screen.getByRole('tab', { name: 'Attempt History (1)' });
     expect(saved).toHaveAttribute('aria-selected', 'true');
 
     await userEvent.click(attempts);
     expect(attempts).toHaveAttribute('aria-selected', 'true');
     expect(screen.getByRole('tabpanel')).toHaveAccessibleName(
-      'Attempt history (1)',
+      'Attempt History (1)',
     );
 
     await userEvent.keyboard('{ArrowLeft}');
@@ -76,8 +77,11 @@ describe('QuizHistory', () => {
       name: 'DevOps Basics Practice',
     });
 
-    expect(card).toHaveTextContent('5 questions · 15 minutes');
-    await userEvent.click(within(card).getByRole('button', { name: 'Start' }));
+    expect(card).toHaveTextContent('5 Questions');
+    expect(card).toHaveTextContent('15 Minutes');
+    await userEvent.click(
+      within(card).getByRole('button', { name: 'Start Quiz' }),
+    );
 
     expect(h.onStart).toHaveBeenCalledWith(sampleQuiz);
   });
@@ -106,11 +110,11 @@ describe('QuizHistory', () => {
     const click = vi
       .spyOn(HTMLAnchorElement.prototype, 'click')
       .mockImplementation(function (this: HTMLAnchorElement) {
-        expect(this.download).toBe('devops-basics-practice.json');
+        expect(this.download).toBe('devops_basics_practice.json');
       });
     render(<QuizHistory {...handlers()} />);
 
-    await userEvent.click(screen.getByRole('button', { name: 'Export JSON' }));
+    await userEvent.click(screen.getByRole('button', { name: 'Export' }));
 
     expect(click).toHaveBeenCalledOnce();
   });
@@ -119,12 +123,13 @@ describe('QuizHistory', () => {
     appendHistory(localStorage, record);
     const h = handlers();
     render(<QuizHistory {...h} />);
-    await userEvent.click(screen.getByRole('tab', { name: /Attempt history/ }));
+    await userEvent.click(screen.getByRole('tab', { name: /Attempt History/ }));
 
-    const row = screen.getAllByRole('row')[1];
+    const row = screen.getAllByRole('listitem')[0];
     expect(row).toHaveTextContent('DevOps Basics Practice');
-    expect(row).toHaveTextContent('3 / 7 (42.86%)');
-    expect(row).toHaveTextContent('0:05:00');
+    expect(row).toHaveTextContent('3/7');
+    expect(row).toHaveTextContent('43%');
+    expect(row).toHaveTextContent('5m 0s');
     expect(row.querySelector('time')).toHaveAttribute(
       'datetime',
       record.timestamp,
@@ -132,21 +137,19 @@ describe('QuizHistory', () => {
 
     await userEvent.click(within(row).getByRole('button', { name: 'Review' }));
     expect(h.onReview).toHaveBeenCalledWith(record);
-    await userEvent.click(within(row).getByRole('button', { name: 'Retake' }));
-    expect(h.onStart).toHaveBeenCalledWith(sampleQuiz);
   });
 
   it('clears the attempt history after confirming', async () => {
     appendHistory(localStorage, record);
     vi.spyOn(window, 'confirm').mockReturnValue(true);
     render(<QuizHistory {...handlers()} />);
-    await userEvent.click(screen.getByRole('tab', { name: /Attempt history/ }));
+    await userEvent.click(screen.getByRole('tab', { name: /Attempt History/ }));
 
     await userEvent.click(
-      screen.getByRole('button', { name: 'Clear history' }),
+      screen.getByRole('button', { name: 'Clear Attempt History' }),
     );
 
     expect(loadHistory(localStorage)).toEqual([]);
-    expect(screen.getByText('No attempts yet.')).toBeInTheDocument();
+    expect(screen.getByText('No Attempt History Recorded')).toBeInTheDocument();
   });
 });

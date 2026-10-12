@@ -43,3 +43,8 @@
           - 'src/components/quiz/ResultsReview.tsx'
           - 'src/components/quiz/QuestionReview.tsx'
           - 'src/utils/grading.ts'
+'area: history':
+  - changed-files:
+      - any-glob-to-any-file:
+          - 'src/components/history/**'
+          - 'src/utils/attemptStorage.ts'

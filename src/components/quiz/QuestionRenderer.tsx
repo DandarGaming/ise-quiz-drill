@@ -506,6 +506,7 @@ export const QuestionRenderer: React.FC<QuestionRendererProps> = ({
                       >
                         {option.text}
                       </span>
+                      {reviewMode && (correct || selected) && ' '}
                       {reviewMode && (correct || selected) && (
                         <span className="sr-only">
                           {selected

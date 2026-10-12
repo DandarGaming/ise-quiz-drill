@@ -36,7 +36,11 @@ export function AppContainer() {
   // Taking a quiz uses the whole screen, without the app navigation
   if (view.name === 'quiz') {
     return (
-      <QuizSimulator key={view.quiz.id} quiz={view.quiz} onExit={toLibrary} />
+      <QuizSimulator
+        key={view.quiz.id}
+        quiz={view.quiz}
+        onExit={() => setView({ name: 'creator' })}
+      />
     );
   }
 

@@ -55,10 +55,12 @@ const renderResults = (
 describe('ResultsReview', () => {
   it('summarises the score and time taken', () => {
     renderResults();
-    const summary = screen.getByRole('region', { name: 'Summary' });
+    const summary = screen.getByRole('region', {
+      name: 'Quiz Submission Overview',
+    });
 
     expect(summary).toHaveTextContent('2 / 5 (40%)');
-    expect(summary).toHaveTextContent('0:12:34');
+    expect(summary).toHaveTextContent('12m 34s');
     expect(summary).toHaveTextContent('Submitted');
   });
 
@@ -66,24 +68,28 @@ describe('ResultsReview', () => {
     renderResults();
 
     expect(
-      screen.getByRole('button', { name: 'Incorrect (2)' }),
+      screen.getByRole('button', { name: 'Incorrect Only 2' }),
     ).toHaveAttribute('aria-pressed', 'true');
     expect(
-      screen.getByRole('button', { name: 'Correct (1)' }),
+      screen.getByRole('button', { name: 'Correct 1' }),
     ).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: 'All (3)' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'All 3' })).toBeInTheDocument();
     expect(
-      screen.getAllByRole('heading', { level: 3 }).map((h) => h.textContent),
-    ).toEqual(['Question 2: 0 / 1 point', 'Question 3: 0 / 2 points']);
+      screen
+        .getAllByRole('heading', { name: /^Question \d$/ })
+        .map((h) => h.textContent),
+    ).toEqual(['Question 2', 'Question 3']);
   });
 
   it('switches the filter', async () => {
     renderResults();
 
-    await userEvent.click(screen.getByRole('button', { name: 'All (3)' }));
+    await userEvent.click(screen.getByRole('button', { name: 'All 3' }));
 
-    expect(screen.getAllByRole('heading', { level: 3 })).toHaveLength(3);
-    expect(screen.getByRole('button', { name: 'All (3)' })).toHaveAttribute(
+    expect(
+      screen.getAllByRole('heading', { name: /^Question \d$/ }),
+    ).toHaveLength(3);
+    expect(screen.getByRole('button', { name: 'All 3' })).toHaveAttribute(
       'aria-pressed',
       'true',
     );
@@ -91,7 +97,9 @@ describe('ResultsReview', () => {
 
   it('congratulates a perfect attempt', () => {
     renderResults({ q1: 'a', q2: 'a', q3: 'a' });
-    expect(screen.getByText('No incorrect questions.')).toBeInTheDocument();
+    expect(
+      screen.getByText('Perfect Score! No incorrect questions.'),
+    ).toBeInTheDocument();
   });
 
   it('lists proctoring events when anti-cheat is on', () => {
@@ -107,7 +115,7 @@ describe('ResultsReview', () => {
       },
       eventLog: events,
     });
-    const log = screen.getByRole('region', { name: 'Proctoring log' });
+    const log = screen.getByRole('region', { name: 'Proctoring Audit Trail' });
 
     expect(log).toHaveTextContent('focus lost');
     expect(log).toHaveTextContent('Left the quiz tab');
@@ -120,7 +128,7 @@ describe('ResultsReview', () => {
   it('hides the proctoring log when anti-cheat is off', () => {
     renderResults(undefined, { eventLog: events });
     expect(
-      screen.queryByRole('region', { name: 'Proctoring log' }),
+      screen.queryByRole('region', { name: 'Proctoring Audit Trail' }),
     ).not.toBeInTheDocument();
   });
 
@@ -128,7 +136,9 @@ describe('ResultsReview', () => {
     const onRetake = vi.fn();
     renderResults(undefined, { onRetake });
 
-    await userEvent.click(screen.getByRole('button', { name: 'Retake quiz' }));
+    await userEvent.click(
+      screen.getAllByRole('button', { name: 'Retake Quiz' })[0],
+    );
 
     expect(onRetake).toHaveBeenCalledOnce();
   });

@@ -224,4 +224,57 @@ describe('QuestionRenderer', () => {
     expect(code).toHaveTextContent('const b = 2;');
     expect(within(code).getByText('2')).toBeInTheDocument();
   });
+
+  describe('review mode', () => {
+    const review = (question: Question, answer?: string | string[]) =>
+      render(
+        <QuestionRenderer
+          question={question}
+          answer={answer}
+          isFlagged={false}
+          onAnswerChange={() => {}}
+          onToggleFlag={() => {}}
+          reviewMode
+        />,
+      );
+
+    it('shows the points earned and hides the flag and strike buttons', () => {
+      review(multiSelect, ['a']);
+      expect(screen.getByText('0 / 2 point')).toBeInTheDocument();
+      expect(screen.queryByRole('button')).toBeNull();
+    });
+
+    it('marks the correct options and the wrong choices for screen readers too', () => {
+      review(multiSelect, ['a', 'b']);
+      expect(
+        screen.getByRole('checkbox', { name: /S3 Your answer, correct/ }),
+      ).toBeDisabled();
+      expect(
+        screen.getByRole('checkbox', { name: /Vercel Your answer, incorrect/ }),
+      ).toBeChecked();
+      expect(
+        screen.getByRole('checkbox', { name: /CloudFront Correct answer/ }),
+      ).not.toBeChecked();
+    });
+
+    it('shows the accepted answers for text questions', () => {
+      review({ ...shortAnswer, correctAnswer: ['S3', 'Amazon S3'] }, 'EBS');
+      expect(screen.getByText('S3 or Amazon S3')).toBeInTheDocument();
+      expect(screen.getByRole('textbox', { name: 'Answer' })).toHaveValue(
+        'EBS',
+      );
+    });
+
+    it('lists the correct answer for each blank', () => {
+      review(blanks, ['Continuous', 'Delivery']);
+      expect(screen.getByText('Integration')).toBeInTheDocument();
+    });
+
+    it('shows the explanation', () => {
+      review({ ...mcq, explanation: 'git branch creates a branch.' }, 'a');
+      expect(
+        screen.getByText('git branch creates a branch.'),
+      ).toBeInTheDocument();
+    });
+  });
 });

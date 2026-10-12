@@ -44,28 +44,30 @@ describe('AppContainer', () => {
     ]);
   });
 
-  it('goes to the library when leaving a quiz and can review the attempt', async () => {
+  it('returns to the creator after a quiz and reviews the attempt from the library', async () => {
     render(<AppContainer />);
     await userEvent.click(
       within(mainNav()).getByRole('button', { name: 'Try a sample' }),
     );
     await finishQuiz();
     await userEvent.click(
-      screen.getByRole('button', { name: 'Back to library' }),
+      screen.getAllByRole('button', { name: 'Back to Creator' })[0],
     );
 
     expect(
-      screen.getByRole('heading', {
-        level: 1,
-        name: 'Saved tests and history',
-      }),
+      screen.getByRole('heading', { level: 1, name: 'Create a mock test' }),
     ).toBeInTheDocument();
+    await userEvent.click(
+      within(mainNav()).getByRole('button', { name: 'Library' }),
+    );
     await userEvent.click(
       screen.getByRole('tab', { name: /Attempt history \(1\)/ }),
     );
     await userEvent.click(screen.getByRole('button', { name: 'Review' }));
 
-    expect(screen.getByRole('region', { name: 'Summary' })).toBeInTheDocument();
+    expect(
+      screen.getByRole('region', { name: 'Quiz Submission Overview' }),
+    ).toBeInTheDocument();
   });
 
   it('starts a saved test from the library', async () => {
@@ -74,6 +76,9 @@ describe('AppContainer', () => {
     await userEvent.click(screen.getByRole('button', { name: 'Load sample' }));
     await userEvent.click(screen.getByRole('button', { name: 'Start quiz' }));
     await userEvent.click(screen.getByRole('button', { name: 'Exit quiz' }));
+    await userEvent.click(
+      within(mainNav()).getByRole('button', { name: 'Library' }),
+    );
 
     await userEvent.click(screen.getByRole('button', { name: 'Start' }));
 

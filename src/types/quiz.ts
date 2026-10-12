@@ -65,14 +65,12 @@ export interface QuizConfig {
 
 export interface AttemptState {
   quizId: string;
-  templateMode: TemplateMode;
+  startedAt: string; // ISO 8601
+  deadline: number; // epoch ms when the time limit runs out
   currentPage: number;
   answers: Record<string, string | string[]>; // questionId -> answer
   flagged: Record<string, boolean>; // questionId -> isFlagged
-  remainingSeconds: number;
   eventLog: QuizEvent[];
-  isSubmitted: boolean;
-  submittedAt?: string; // ISO 8601
 }
 
 export interface QuestionResult {

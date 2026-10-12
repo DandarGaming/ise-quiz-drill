@@ -1,6 +1,6 @@
 ---
 import { QuizSimulator } from '../components/quiz/QuizSimulator';
-import { demoQuiz } from '../components/quiz/demoQuiz';
+import { sampleQuiz } from '../data/sampleQuiz';
 import '../styles/quiz.css';
 
 export const prerender = true;
@@ -15,6 +15,6 @@ export const prerender = true;
     <title>Quiz preview</title>
   </head>
   <body class="bg-white font-sans text-gray-900 antialiased">
-    <QuizSimulator quiz={demoQuiz} client:only="react" />
+    <QuizSimulator quiz={sampleQuiz} client:only="react" />
   </body>
 </html>

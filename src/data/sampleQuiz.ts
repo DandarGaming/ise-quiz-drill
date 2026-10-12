@@ -1,7 +1,7 @@
-import type { Question, QuizConfig } from '../../types/quiz';
+import type { Question, QuizConfig } from '../types/quiz';
 
-// Preview quiz for /quiz: one question of every type. Removed when the
-// app moves to the root page.
+// Sample quiz with one question of every type. Used for the preview page and
+// as the example JSON in the importer.
 const questions: Question[] = [
   {
     id: 'demo-mcq',
@@ -67,10 +67,10 @@ const questions: Question[] = [
   },
 ];
 
-export const demoQuiz: QuizConfig = {
-  id: 'demo',
-  title: 'Question types preview',
-  courseCode: 'DEMO',
+export const sampleQuiz: QuizConfig = {
+  id: 'sample-devops',
+  title: 'DevOps Basics Practice',
+  courseCode: 'SAMPLE',
   description: 'One question of every type',
   templateMode: 'paginated',
   timeLimitMinutes: 15,

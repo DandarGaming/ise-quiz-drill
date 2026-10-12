@@ -1,8 +1,7 @@
 import { useState } from 'react';
 import { Bookmark, Check, Strikethrough } from 'lucide-react';
 import type { Question } from '../../types/quiz';
-
-type Answer = string | string[];
+import { isAnswered, type Answer } from '../../utils/answers';
 
 export interface QuestionRendererProps {
   question: Question;
@@ -13,11 +12,6 @@ export interface QuestionRendererProps {
 }
 
 const BLANK = '[BLANK]';
-
-export function isAnswered(answer: Answer | undefined): boolean {
-  if (Array.isArray(answer)) return answer.some((part) => part.trim() !== '');
-  return (answer ?? '').trim() !== '';
-}
 
 function CodeSnippet({ code }: { code: string }) {
   const lines = code.split('\n');

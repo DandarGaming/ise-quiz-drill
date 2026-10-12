@@ -1,6 +1,5 @@
 import type { Question, QuestionResult, QuizConfig } from '../types/quiz';
-
-type Answer = string | string[];
+import type { Answer } from './answers';
 
 const normalize = (text: string) => text.trim().toLowerCase();
 const asList = (value: Answer | undefined): string[] =>

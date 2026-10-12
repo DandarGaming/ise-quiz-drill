@@ -31,3 +31,15 @@
       - any-glob-to-any-file:
           - 'src/components/quiz/**'
           - 'src/types/quiz.ts'
+'area: creator':
+  - changed-files:
+      - any-glob-to-any-file:
+          - 'src/components/creator/**'
+          - 'src/utils/promptBuilder.ts'
+          - 'src/utils/quizSchema.ts'
+'area: results':
+  - changed-files:
+      - any-glob-to-any-file:
+          - 'src/components/quiz/ResultsReview.tsx'
+          - 'src/components/quiz/QuestionReview.tsx'
+          - 'src/utils/grading.ts'

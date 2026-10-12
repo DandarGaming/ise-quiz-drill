@@ -9,12 +9,16 @@ import { sampleQuiz } from '../../data/sampleQuiz';
 beforeEach(() => localStorage.clear());
 afterEach(() => vi.restoreAllMocks());
 
-const importSample = () =>
+const mainNav = () => screen.getByRole('navigation', { name: 'Main' });
+
+async function startImportedQuiz() {
   fireEvent.change(screen.getByLabelText('Quiz JSON'), {
     target: { value: JSON.stringify(sampleQuiz) },
   });
-
-const mainNav = () => screen.getByRole('navigation', { name: 'Main' });
+  await userEvent.click(
+    screen.getByRole('button', { name: 'Start Quiz Simulation Now' }),
+  );
+}
 
 async function finishQuiz() {
   await userEvent.click(screen.getByRole('button', { name: 'Submit Quiz' }));
@@ -33,17 +37,14 @@ describe('AppContainer', () => {
       screen.getByRole('heading', { level: 1, name: 'Mock Test Creator' }),
     ).toBeInTheDocument();
     expect(
-      within(mainNav()).getByRole('button', { name: 'Create test' }),
+      within(mainNav()).getByRole('button', { name: 'Test Creator' }),
     ).toHaveAttribute('aria-current', 'page');
   });
 
   it('saves a quiz started from the creator and runs it without the navigation', async () => {
     render(<AppContainer />);
 
-    importSample();
-    await userEvent.click(
-      screen.getByRole('button', { name: 'Start Quiz Simulation Now' }),
-    );
+    await startImportedQuiz();
 
     expect(screen.getByRole('timer')).toBeInTheDocument();
     expect(screen.queryByRole('navigation', { name: 'Main' })).toBeNull();
@@ -54,22 +55,17 @@ describe('AppContainer', () => {
 
   it('returns to the creator after a quiz and reviews the attempt from the library', async () => {
     render(<AppContainer />);
-    await userEvent.click(
-      within(mainNav()).getByRole('button', { name: 'Try a sample' }),
-    );
+    await startImportedQuiz();
     await finishQuiz();
     await userEvent.click(
       screen.getAllByRole('button', { name: 'Back to Creator' })[0],
     );
 
-    expect(
-      screen.getByRole('heading', { level: 1, name: 'Mock Test Creator' }),
-    ).toBeInTheDocument();
     await userEvent.click(
-      within(mainNav()).getByRole('button', { name: 'Library' }),
+      within(mainNav()).getByRole('button', { name: /Saved Library/ }),
     );
     await userEvent.click(
-      screen.getByRole('tab', { name: /Attempt history \(1\)/ }),
+      screen.getByRole('tab', { name: /Attempt History \(1\)/ }),
     );
     await userEvent.click(screen.getByRole('button', { name: 'Review' }));
 
@@ -78,19 +74,18 @@ describe('AppContainer', () => {
     ).toBeInTheDocument();
   });
 
-  it('starts a saved test from the library', async () => {
+  it('counts saved tests in the navigation and starts one from the library', async () => {
     vi.spyOn(window, 'confirm').mockReturnValue(true);
     render(<AppContainer />);
-    importSample();
-    await userEvent.click(
-      screen.getByRole('button', { name: 'Start Quiz Simulation Now' }),
-    );
+    await startImportedQuiz();
     await userEvent.click(screen.getByRole('button', { name: 'Exit quiz' }));
-    await userEvent.click(
-      within(mainNav()).getByRole('button', { name: 'Library' }),
-    );
 
-    await userEvent.click(screen.getByRole('button', { name: 'Start' }));
+    const library = within(mainNav()).getByRole('button', {
+      name: /Saved Library/,
+    });
+    expect(library).toHaveTextContent('1');
+    await userEvent.click(library);
+    await userEvent.click(screen.getByRole('button', { name: 'Start Quiz' }));
 
     expect(screen.getByRole('timer')).toBeInTheDocument();
   });

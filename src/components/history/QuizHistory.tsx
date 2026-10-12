@@ -1,5 +1,15 @@
-import { useRef, useState, type KeyboardEvent } from 'react';
-import { Download, Play, PlusCircle, RotateCcw, Trash2 } from 'lucide-react';
+import React, { useRef, useState, type KeyboardEvent } from 'react';
+import {
+  Clock,
+  Download,
+  Eye,
+  FileJson,
+  HelpCircle,
+  History,
+  Play,
+  PlusCircle,
+  Trash2,
+} from 'lucide-react';
 import type { QuizAttemptRecord, QuizConfig } from '../../types/quiz';
 import {
   clearHistory,
@@ -13,200 +23,264 @@ import {
   safely,
   type KeyValueStore,
 } from '../../utils/browserStorage';
-import { formatDuration } from '../quiz/HeaderBar';
 
 export interface QuizHistoryProps {
   onStart: (quiz: QuizConfig) => void;
   onCreate: () => void;
-  onReview: (record: QuizAttemptRecord) => void;
+  onReview?: (record: QuizAttemptRecord) => void;
   storage?: KeyValueStore;
 }
 
-type Tab = 'saved' | 'attempts';
+type SubTab = 'quizzes' | 'attempts';
 
-const fileName = (title: string) =>
-  `${
-    title
-      .toLowerCase()
-      .replace(/[^a-z0-9]+/g, '-')
-      .replace(/^-|-$/g, '') || 'quiz'
-  }.json`;
+const formatDuration = (secs: number) => {
+  const m = Math.floor(secs / 60);
+  const s = secs % 60;
+  return `${m}m ${s}s`;
+};
 
-function exportQuiz(quiz: QuizConfig) {
+function exportJson(quiz: QuizConfig) {
   const url = URL.createObjectURL(
     new Blob([JSON.stringify(quiz, null, 2)], { type: 'application/json' }),
   );
   const link = document.createElement('a');
   link.href = url;
-  link.download = fileName(quiz.title);
+  const safeTitle = (quiz.title || 'quiz')
+    .toLowerCase()
+    .replace(/[^a-z0-9]/g, '_');
+  link.download = `${safeTitle}.json`;
+  document.body.appendChild(link);
   link.click();
+  document.body.removeChild(link);
   URL.revokeObjectURL(url);
 }
 
-const button =
-  'flex items-center gap-1.5 rounded-lg border border-gray-300 bg-gray-50 px-3 py-1.5 text-sm font-bold text-gray-800 hover:bg-gray-100';
-const primary =
-  'flex items-center gap-1.5 rounded-lg bg-[#006fbf] px-3 py-1.5 text-sm font-bold text-white hover:bg-[#005694]';
+const tabClass = (active: boolean) =>
+  `px-4 py-2 rounded-lg font-bold text-xs transition-all flex items-center gap-2 cursor-pointer ${
+    active
+      ? 'bg-[#006fbf] text-white shadow-xs'
+      : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+  }`;
 
-export function QuizHistory({
+export const QuizHistory: React.FC<QuizHistoryProps> = ({
   onStart,
   onCreate,
   onReview,
   storage = browserStorage(),
-}: QuizHistoryProps) {
-  const [tab, setTab] = useState<Tab>('saved');
-  const [quizzes, setQuizzes] = useState(
+}) => {
+  const [subTab, setSubTab] = useState<SubTab>('quizzes');
+  const [savedQuizzes, setSavedQuizzes] = useState(
     () => (storage && safely(() => loadSavedQuizzes(storage))) ?? [],
   );
   const [attempts, setAttempts] = useState(
     () => (storage && safely(() => loadHistory(storage))) ?? [],
   );
-  const tabRefs = useRef<Record<Tab, HTMLButtonElement | null>>({
-    saved: null,
+  const tabRefs = useRef<Record<SubTab, HTMLButtonElement | null>>({
+    quizzes: null,
     attempts: null,
   });
 
-  const removeQuiz = (quiz: QuizConfig) => {
-    if (!window.confirm(`Delete "${quiz.title}"?`)) return;
-    if (storage) safely(() => deleteSavedQuiz(storage, quiz.id));
-    setQuizzes((list) => list.filter((q) => q.id !== quiz.id));
-  };
-
-  const removeAttempt = (record: QuizAttemptRecord) => {
-    if (!window.confirm('Delete this attempt?')) return;
-    if (storage) safely(() => deleteHistoryRecord(storage, record.id));
-    setAttempts((list) => list.filter((r) => r.id !== record.id));
-  };
-
-  const clearAll = () => {
-    if (
-      !window.confirm('Clear the whole attempt history? This cannot be undone.')
-    )
+  const handleDeleteQuiz = (quiz: QuizConfig) => {
+    if (!window.confirm(`Are you sure you want to delete "${quiz.title}"?`)) {
       return;
+    }
+    if (storage) safely(() => deleteSavedQuiz(storage, quiz.id));
+    setSavedQuizzes((list) => list.filter((q) => q.id !== quiz.id));
+  };
+
+  const handleDeleteAttempt = (id: string) => {
+    if (
+      !window.confirm('Are you sure you want to delete this attempt record?')
+    ) {
+      return;
+    }
+    if (storage) safely(() => deleteHistoryRecord(storage, id));
+    setAttempts((list) => list.filter((a) => a.id !== id));
+  };
+
+  const handleClearAllAttempts = () => {
+    if (
+      !window.confirm(
+        'Are you sure you want to clear ALL attempt history? This cannot be undone.',
+      )
+    ) {
+      return;
+    }
     if (storage) safely(() => clearHistory(storage));
     setAttempts([]);
   };
 
-  const tabs: [Tab, string][] = [
-    ['saved', `Saved tests (${quizzes.length})`],
-    ['attempts', `Attempt history (${attempts.length})`],
-  ];
-
-  // Left and Right move between tabs, as in the ARIA tabs pattern
+  // Left and Right move between the two tabs, as in the ARIA tabs pattern
   const onTabKey = (event: KeyboardEvent) => {
     if (event.key !== 'ArrowLeft' && event.key !== 'ArrowRight') return;
-    const next: Tab = tab === 'saved' ? 'attempts' : 'saved';
-    setTab(next);
+    const next: SubTab = subTab === 'quizzes' ? 'attempts' : 'quizzes';
+    setSubTab(next);
     tabRefs.current[next]?.focus();
   };
 
+  const tabProps = (id: SubTab) => ({
+    ref: (el: HTMLButtonElement | null) => {
+      tabRefs.current[id] = el;
+    },
+    id: `tab-${id}`,
+    type: 'button' as const,
+    role: 'tab',
+    'aria-selected': subTab === id,
+    'aria-controls': `panel-${id}`,
+    tabIndex: subTab === id ? 0 : -1,
+    onClick: () => setSubTab(id),
+    className: tabClass(subTab === id),
+  });
+
   return (
-    <div className="mx-auto max-w-5xl space-y-6 px-4 py-8">
-      <div className="flex flex-wrap items-center justify-between gap-4">
-        <h1 className="text-2xl font-bold text-gray-900">
-          Saved tests and history
-        </h1>
-        <button type="button" onClick={onCreate} className={primary}>
-          <PlusCircle aria-hidden="true" className="h-4 w-4" /> Create new test
-        </button>
+    <div className="w-full max-w-[1150px] mx-auto p-6 space-y-8 font-sans animate-fade-in">
+      <div className="border-b border-gray-200 pb-5 flex flex-col md:flex-row md:items-center justify-between gap-4">
+        <div>
+          <h1 className="text-3xl font-bold text-gray-900 tracking-tight">
+            Saved Quiz Library & History
+          </h1>
+          <p className="text-gray-600 text-sm mt-1">
+            Manage your mock tests, view past score history, re-take quizzes, or
+            export JSON files.
+          </p>
+        </div>
+        <div className="flex items-center gap-3">
+          <button
+            type="button"
+            onClick={onCreate}
+            className="px-4 py-2.5 bg-[#006fbf] hover:bg-[#005694] text-white rounded-lg font-bold text-sm transition-colors shadow-sm flex items-center gap-2 cursor-pointer"
+          >
+            <PlusCircle aria-hidden="true" className="w-4 h-4" /> Create New
+            Test
+          </button>
+        </div>
       </div>
 
-      <div
-        role="tablist"
-        aria-label="Library"
-        className="flex gap-2"
-        onKeyDown={onTabKey}
-      >
-        {tabs.map(([id, label]) => (
-          <button
-            key={id}
-            ref={(el) => {
-              tabRefs.current[id] = el;
-            }}
-            id={`tab-${id}`}
-            type="button"
-            role="tab"
-            aria-selected={tab === id}
-            aria-controls={`panel-${id}`}
-            tabIndex={tab === id ? 0 : -1}
-            onClick={() => setTab(id)}
-            className={`rounded-lg px-4 py-2 text-sm font-bold ${
-              tab === id
-                ? 'bg-[#006fbf] text-white'
-                : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-            }`}
-          >
-            {label}
+      <div className="flex items-center justify-between border-b border-gray-200 pb-3">
+        <div
+          role="tablist"
+          aria-label="Library"
+          onKeyDown={onTabKey}
+          className="flex items-center gap-2"
+        >
+          <button {...tabProps('quizzes')}>
+            <FileJson aria-hidden="true" className="w-4 h-4" /> Saved Tests (
+            {savedQuizzes.length})
           </button>
-        ))}
+          <button {...tabProps('attempts')}>
+            <History aria-hidden="true" className="w-4 h-4" /> Attempt History (
+            {attempts.length})
+          </button>
+        </div>
+
+        {subTab === 'attempts' && attempts.length > 0 && (
+          <button
+            type="button"
+            onClick={handleClearAllAttempts}
+            className="text-xs text-red-600 hover:text-red-800 font-bold flex items-center gap-1 cursor-pointer transition-colors"
+          >
+            <Trash2 aria-hidden="true" className="w-3.5 h-3.5" /> Clear Attempt
+            History
+          </button>
+        )}
       </div>
 
       <div
         role="tabpanel"
-        id={`panel-${tab}`}
-        aria-labelledby={`tab-${tab}`}
-        className="rounded-xl border border-gray-200 bg-white p-6"
+        id={`panel-${subTab}`}
+        aria-labelledby={`tab-${subTab}`}
       >
-        {tab === 'saved' &&
-          (quizzes.length === 0 ? (
-            <div className="space-y-3 py-10 text-center">
-              <p className="text-lg font-bold text-gray-900">
-                No saved tests yet.
+        {subTab === 'quizzes' &&
+          (savedQuizzes.length === 0 ? (
+            <div className="bg-white border border-dashed border-gray-300 rounded-xl p-12 text-center space-y-4">
+              <div className="w-16 h-16 bg-blue-50 text-[#006fbf] rounded-full flex items-center justify-center mx-auto">
+                <FileJson aria-hidden="true" className="w-8 h-8" />
+              </div>
+              <h2 className="text-xl font-bold text-gray-900">
+                No Saved Quizzes Found
+              </h2>
+              <p className="text-sm text-gray-500 max-w-md mx-auto">
+                You haven&apos;t saved any quizzes yet. Use the Test Creator to
+                generate AI prompts or import JSON mock tests.
               </p>
               <button
                 type="button"
                 onClick={onCreate}
-                className={`${primary} mx-auto`}
+                className="px-6 py-2.5 bg-[#006fbf] hover:bg-[#005694] text-white font-bold text-sm rounded-lg transition-colors cursor-pointer inline-flex items-center gap-2"
               >
-                Create your first test
+                <PlusCircle aria-hidden="true" className="w-4 h-4" /> Create
+                Your First Test
               </button>
             </div>
           ) : (
-            <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-              {quizzes.map((quiz) => (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {savedQuizzes.map((quiz) => (
                 <article
                   key={quiz.id}
                   aria-labelledby={`saved-${quiz.id}`}
-                  className="space-y-3 rounded-lg border border-gray-200 p-4"
+                  className="bg-white border border-gray-200 rounded-xl p-6 shadow-sm hover:shadow-md transition-all flex flex-col justify-between space-y-5"
                 >
-                  <div>
-                    <h2
+                  <div className="space-y-3">
+                    <div className="flex items-center justify-between">
+                      <span className="px-2.5 py-0.5 bg-blue-50 text-[#006fbf] border border-blue-100 rounded text-xs font-mono font-bold">
+                        {quiz.courseCode || 'GENERAL'}
+                      </span>
+                      <button
+                        type="button"
+                        onClick={() => handleDeleteQuiz(quiz)}
+                        aria-label={`Delete ${quiz.title}`}
+                        className="text-gray-400 hover:text-red-600 transition-colors p-1 cursor-pointer"
+                        title="Delete quiz"
+                      >
+                        <Trash2 aria-hidden="true" className="w-4 h-4" />
+                      </button>
+                    </div>
+
+                    <h3
                       id={`saved-${quiz.id}`}
-                      className="text-lg font-bold text-gray-900"
+                      className="text-lg font-bold text-gray-900 leading-snug line-clamp-2"
                     >
                       {quiz.title}
-                    </h2>
-                    <p className="font-mono text-xs text-gray-500">
-                      {quiz.courseCode}
-                    </p>
+                    </h3>
+
+                    <div className="grid grid-cols-2 gap-2 text-xs text-gray-600 pt-2 border-t border-gray-100">
+                      <div className="flex items-center gap-1.5 font-medium">
+                        <HelpCircle
+                          aria-hidden="true"
+                          className="w-4 h-4 text-gray-400"
+                        />
+                        <span>{quiz.questions.length} Questions</span>
+                      </div>
+                      <div className="flex items-center gap-1.5 font-medium">
+                        <Clock
+                          aria-hidden="true"
+                          className="w-4 h-4 text-gray-400"
+                        />
+                        <span>{quiz.timeLimitMinutes} Minutes</span>
+                      </div>
+                    </div>
                   </div>
-                  <p className="text-sm text-gray-700">
-                    {quiz.questions.length} questions · {quiz.timeLimitMinutes}{' '}
-                    minutes
-                  </p>
-                  <div className="flex flex-wrap gap-2">
+
+                  <div className="pt-4 border-t border-gray-100 flex items-center gap-2">
                     <button
                       type="button"
                       onClick={() => onStart(quiz)}
-                      className={primary}
+                      className="flex-1 px-4 py-2 bg-[#006fbf] hover:bg-[#005694] text-white font-bold text-xs rounded-lg transition-colors flex items-center justify-center gap-2 cursor-pointer shadow-xs"
                     >
-                      <Play aria-hidden="true" className="h-4 w-4" /> Start
+                      <Play
+                        aria-hidden="true"
+                        className="w-3.5 h-3.5 fill-current"
+                      />{' '}
+                      Start Quiz
                     </button>
                     <button
                       type="button"
-                      onClick={() => exportQuiz(quiz)}
-                      className={button}
+                      onClick={() => exportJson(quiz)}
+                      className="px-3 py-2 bg-gray-100 hover:bg-gray-200 text-gray-800 border border-gray-300 font-semibold text-xs rounded-lg transition-colors flex items-center justify-center gap-1.5 cursor-pointer"
+                      title="Export JSON file"
                     >
-                      <Download aria-hidden="true" className="h-4 w-4" /> Export
-                      JSON
-                    </button>
-                    <button
-                      type="button"
-                      aria-label={`Delete ${quiz.title}`}
-                      onClick={() => removeQuiz(quiz)}
-                      className={button}
-                    >
-                      <Trash2 aria-hidden="true" className="h-4 w-4" /> Delete
+                      <Download aria-hidden="true" className="w-3.5 h-3.5" />{' '}
+                      Export
                     </button>
                   </div>
                 </article>
@@ -214,83 +288,110 @@ export function QuizHistory({
             </div>
           ))}
 
-        {tab === 'attempts' &&
+        {subTab === 'attempts' &&
           (attempts.length === 0 ? (
-            <p className="py-10 text-center text-lg font-bold text-gray-900">
-              No attempts yet.
-            </p>
-          ) : (
-            <div className="space-y-4">
-              <div className="flex justify-end">
-                <button type="button" onClick={clearAll} className={button}>
-                  <Trash2 aria-hidden="true" className="h-4 w-4" /> Clear
-                  history
-                </button>
+            <div className="bg-white border border-dashed border-gray-300 rounded-xl p-12 text-center space-y-4">
+              <div className="w-16 h-16 bg-amber-50 text-amber-600 rounded-full flex items-center justify-center mx-auto">
+                <History aria-hidden="true" className="w-8 h-8" />
               </div>
-              <table className="w-full text-left text-sm">
-                <thead className="text-xs uppercase text-gray-500">
-                  <tr>
-                    <th className="py-2">Date</th>
-                    <th className="py-2">Quiz</th>
-                    <th className="py-2">Score</th>
-                    <th className="py-2">Time</th>
-                    <th className="py-2">
-                      <span className="sr-only">Actions</span>
-                    </th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-gray-100">
-                  {attempts.map((record) => (
-                    <tr key={record.id}>
-                      <td className="py-3">
-                        <time dateTime={record.timestamp}>
-                          {new Date(record.timestamp).toLocaleString()}
-                        </time>
-                      </td>
-                      <td className="py-3 font-semibold text-gray-900">
-                        {record.quizTitle}
-                      </td>
-                      <td className="py-3">
-                        {record.earnedScore} / {record.totalPoints} (
-                        {record.percentage}%)
-                      </td>
-                      <td className="py-3 font-mono">
-                        {formatDuration(record.timeTakenSeconds)}
-                      </td>
-                      <td className="py-3">
-                        <div className="flex justify-end gap-2">
-                          <button
-                            type="button"
-                            onClick={() => onReview(record)}
-                            className={button}
-                          >
-                            Review
-                          </button>
-                          <button
-                            type="button"
-                            onClick={() => onStart(record.quizSnapshot)}
-                            className={button}
-                          >
-                            <RotateCcw aria-hidden="true" className="h-4 w-4" />{' '}
-                            Retake
-                          </button>
-                          <button
-                            type="button"
-                            aria-label="Delete attempt"
-                            onClick={() => removeAttempt(record)}
-                            className={button}
-                          >
-                            <Trash2 aria-hidden="true" className="h-4 w-4" />
-                          </button>
-                        </div>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
+              <h2 className="text-xl font-bold text-gray-900">
+                No Attempt History Recorded
+              </h2>
+              <p className="text-sm text-gray-500 max-w-md mx-auto">
+                Complete a mock quiz attempt to automatically track your scores,
+                completion time, and answer breakdowns.
+              </p>
             </div>
+          ) : (
+            <ul className="space-y-4">
+              {attempts.map((rec) => (
+                <li
+                  key={rec.id}
+                  className="bg-white border border-gray-200 rounded-xl p-5 shadow-sm hover:shadow-md transition-all flex flex-col md:flex-row md:items-center justify-between gap-4"
+                >
+                  <div className="space-y-1.5 flex-1">
+                    <div className="flex items-center gap-2">
+                      <span className="px-2 py-0.5 bg-blue-50 text-[#006fbf] rounded font-mono font-bold text-xs">
+                        {rec.courseCode}
+                      </span>
+                      <time
+                        dateTime={rec.timestamp}
+                        className="text-xs text-gray-400 font-mono"
+                      >
+                        {new Date(rec.timestamp).toLocaleString()}
+                      </time>
+                    </div>
+                    <h3 className="text-base font-bold text-gray-900 leading-snug">
+                      {rec.quizTitle}
+                    </h3>
+                    <div className="flex items-center gap-4 text-xs text-gray-500 pt-1">
+                      <span className="flex items-center gap-1">
+                        <Clock
+                          aria-hidden="true"
+                          className="w-3.5 h-3.5 text-gray-400"
+                        />{' '}
+                        {formatDuration(rec.timeTakenSeconds)}
+                      </span>
+                      <span className="flex items-center gap-1">
+                        <HelpCircle
+                          aria-hidden="true"
+                          className="w-3.5 h-3.5 text-gray-400"
+                        />{' '}
+                        {rec.quizSnapshot.questions.length} Questions
+                      </span>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center gap-4 pt-3 md:pt-0 border-t md:border-t-0 border-gray-100 justify-between md:justify-end">
+                    <div className="text-right">
+                      <div className="text-2xl font-black text-gray-900 flex items-center gap-1.5 justify-end">
+                        <span>
+                          {rec.earnedScore}/{rec.totalPoints}
+                        </span>{' '}
+                        <span
+                          className={`px-2 py-0.5 text-xs font-bold rounded-full ${
+                            rec.percentage >= 80
+                              ? 'bg-emerald-100 text-emerald-800'
+                              : rec.percentage >= 60
+                                ? 'bg-amber-100 text-amber-800'
+                                : 'bg-red-100 text-red-800'
+                          }`}
+                        >
+                          {Math.round(rec.percentage)}%
+                        </span>
+                      </div>
+                      <div className="text-[11px] text-gray-400 font-medium">
+                        Final Attempt Score
+                      </div>
+                    </div>
+
+                    <div className="flex items-center gap-2">
+                      {onReview && (
+                        <button
+                          type="button"
+                          onClick={() => onReview(rec)}
+                          className="px-3.5 py-2 bg-blue-50 hover:bg-blue-100 text-[#006fbf] border border-blue-200 font-bold text-xs rounded-lg transition-colors flex items-center gap-1.5 cursor-pointer"
+                        >
+                          <Eye aria-hidden="true" className="w-3.5 h-3.5" />{' '}
+                          Review
+                        </button>
+                      )}
+                      <button
+                        type="button"
+                        onClick={() => handleDeleteAttempt(rec.id)}
+                        aria-label="Delete attempt"
+                        className="p-2 text-gray-400 hover:text-red-600 transition-colors rounded-lg hover:bg-gray-100 cursor-pointer"
+                        title="Delete attempt log"
+                      >
+                        <Trash2 aria-hidden="true" className="w-4 h-4" />
+                      </button>
+                    </div>
+                  </div>
+                </li>
+              ))}
+            </ul>
           ))}
       </div>
     </div>
   );
-}
+};

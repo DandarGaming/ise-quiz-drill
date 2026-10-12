@@ -14,7 +14,7 @@ const settings: ImportSettings = {
     enabled: false,
     tabLock: true,
     uiRestrictions: true,
-    fullscreenLock: false,
+    fullscreenLock: true,
   },
 };
 
@@ -26,7 +26,7 @@ const paste = (text: string) =>
 describe('JsonImporter', () => {
   it('waits for input before showing anything', () => {
     render(<JsonImporter settings={settings} onStart={() => {}} />);
-    expect(screen.getByRole('button', { name: 'Start quiz' })).toBeDisabled();
+    expect(screen.queryByRole('button', { name: /Start Quiz/ })).toBeNull();
     expect(screen.queryByRole('alert')).toBeNull();
   });
 
@@ -37,9 +37,11 @@ describe('JsonImporter', () => {
     paste(JSON.stringify(sampleQuiz));
 
     expect(screen.getByRole('status')).toHaveTextContent(
-      'DevOps Basics Practice: 5 questions, 25 minutes',
+      'Total Questions: 5 | Time Limit: 25 minutes | 1 Question / Page',
     );
-    await userEvent.click(screen.getByRole('button', { name: 'Start quiz' }));
+    await userEvent.click(
+      screen.getByRole('button', { name: 'Start Quiz Simulation Now' }),
+    );
     expect(onStart).toHaveBeenCalledWith(
       expect.objectContaining({
         title: 'DevOps Basics Practice',
@@ -60,7 +62,7 @@ describe('JsonImporter', () => {
       'aria-invalid',
       'true',
     );
-    expect(screen.getByRole('button', { name: 'Start quiz' })).toBeDisabled();
+    expect(screen.queryByRole('button', { name: /Start Quiz/ })).toBeNull();
   });
 
   it('copies a fix request for the AI', async () => {
@@ -69,19 +71,16 @@ describe('JsonImporter', () => {
     render(<JsonImporter settings={settings} onStart={() => {}} />);
     paste('{"title": "x", "questions": []}');
 
-    await user.click(screen.getByRole('button', { name: 'Copy fix request' }));
+    await user.click(
+      screen.getByRole('button', { name: 'Copy Error for AI Fix' }),
+    );
 
     expect(writeText.mock.lastCall?.[0]).toContain(
       'questions: Add at least one question.',
     );
-  });
-
-  it('loads the sample quiz', async () => {
-    render(<JsonImporter settings={settings} onStart={() => {}} />);
-
-    await userEvent.click(screen.getByRole('button', { name: 'Load sample' }));
-
-    expect(screen.getByRole('status')).toHaveTextContent('5 questions');
+    expect(
+      screen.getByRole('button', { name: 'Error Copied!' }),
+    ).toBeInTheDocument();
   });
 
   it('reads an uploaded .json file', async () => {
@@ -90,10 +89,15 @@ describe('JsonImporter', () => {
       type: 'application/json',
     });
 
-    await userEvent.upload(screen.getByLabelText('Upload a .json file'), file);
+    await userEvent.upload(
+      screen.getByLabelText('browse files from computer'),
+      file,
+    );
 
     await waitFor(() =>
-      expect(screen.getByRole('status')).toHaveTextContent('5 questions'),
+      expect(screen.getByRole('status')).toHaveTextContent(
+        'Total Questions: 5',
+      ),
     );
   });
 });

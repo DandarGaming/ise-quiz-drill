@@ -132,9 +132,9 @@ describe('QuizSimulator', () => {
 
     await submitThroughDialog(u);
 
-    expect(screen.getByRole('region', { name: 'Summary' })).toHaveTextContent(
-      '1 / 3 (33.33%)',
-    );
+    expect(
+      screen.getByRole('region', { name: 'Quiz Submission Overview' }),
+    ).toHaveTextContent('1 / 3 (33%)');
     const history = loadHistory(localStorage);
     expect(history).toHaveLength(1);
     expect(history[0]).toMatchObject({
@@ -153,7 +153,9 @@ describe('QuizSimulator', () => {
 
     act(() => vi.advanceTimersByTime(10 * 60_000 + 2000));
 
-    expect(screen.getByRole('region', { name: 'Summary' })).toBeInTheDocument();
+    expect(
+      screen.getByRole('region', { name: 'Quiz Submission Overview' }),
+    ).toBeInTheDocument();
     expect(loadHistory(localStorage)).toHaveLength(1);
     expect(loadHistory(localStorage)[0].timeTakenSeconds).toBe(600);
   });
@@ -174,7 +176,7 @@ describe('QuizSimulator', () => {
     await u.click(screen.getByRole('radio', { name: 'Wrong 1' }));
     await submitThroughDialog(u);
 
-    await u.click(screen.getByRole('button', { name: 'Retake quiz' }));
+    await u.click(screen.getAllByRole('button', { name: 'Retake Quiz' })[0]);
 
     expect(screen.getByRole('timer')).toHaveTextContent('0:10:00 remaining');
     expect(screen.getByText('0 of 3 questions saved')).toBeInTheDocument();

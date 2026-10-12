@@ -1,12 +1,18 @@
 // @vitest-environment jsdom
 import { afterEach, beforeEach, describe, it, expect, vi } from 'vitest';
-import { render, screen, within } from '@testing-library/react';
+import { fireEvent, render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { AppContainer } from './AppContainer';
 import { loadSavedQuizzes } from '../../utils/attemptStorage';
+import { sampleQuiz } from '../../data/sampleQuiz';
 
 beforeEach(() => localStorage.clear());
 afterEach(() => vi.restoreAllMocks());
+
+const importSample = () =>
+  fireEvent.change(screen.getByLabelText('Quiz JSON'), {
+    target: { value: JSON.stringify(sampleQuiz) },
+  });
 
 const mainNav = () => screen.getByRole('navigation', { name: 'Main' });
 
@@ -24,7 +30,7 @@ describe('AppContainer', () => {
     render(<AppContainer />);
 
     expect(
-      screen.getByRole('heading', { level: 1, name: 'Create a mock test' }),
+      screen.getByRole('heading', { level: 1, name: 'Mock Test Creator' }),
     ).toBeInTheDocument();
     expect(
       within(mainNav()).getByRole('button', { name: 'Create test' }),
@@ -34,8 +40,10 @@ describe('AppContainer', () => {
   it('saves a quiz started from the creator and runs it without the navigation', async () => {
     render(<AppContainer />);
 
-    await userEvent.click(screen.getByRole('button', { name: 'Load sample' }));
-    await userEvent.click(screen.getByRole('button', { name: 'Start quiz' }));
+    importSample();
+    await userEvent.click(
+      screen.getByRole('button', { name: 'Start Quiz Simulation Now' }),
+    );
 
     expect(screen.getByRole('timer')).toBeInTheDocument();
     expect(screen.queryByRole('navigation', { name: 'Main' })).toBeNull();
@@ -44,36 +52,43 @@ describe('AppContainer', () => {
     ]);
   });
 
-  it('goes to the library when leaving a quiz and can review the attempt', async () => {
+  it('returns to the creator after a quiz and reviews the attempt from the library', async () => {
     render(<AppContainer />);
     await userEvent.click(
       within(mainNav()).getByRole('button', { name: 'Try a sample' }),
     );
     await finishQuiz();
     await userEvent.click(
-      screen.getByRole('button', { name: 'Back to library' }),
+      screen.getAllByRole('button', { name: 'Back to Creator' })[0],
     );
 
     expect(
-      screen.getByRole('heading', {
-        level: 1,
-        name: 'Saved tests and history',
-      }),
+      screen.getByRole('heading', { level: 1, name: 'Mock Test Creator' }),
     ).toBeInTheDocument();
+    await userEvent.click(
+      within(mainNav()).getByRole('button', { name: 'Library' }),
+    );
     await userEvent.click(
       screen.getByRole('tab', { name: /Attempt history \(1\)/ }),
     );
     await userEvent.click(screen.getByRole('button', { name: 'Review' }));
 
-    expect(screen.getByRole('region', { name: 'Summary' })).toBeInTheDocument();
+    expect(
+      screen.getByRole('region', { name: 'Quiz Submission Overview' }),
+    ).toBeInTheDocument();
   });
 
   it('starts a saved test from the library', async () => {
     vi.spyOn(window, 'confirm').mockReturnValue(true);
     render(<AppContainer />);
-    await userEvent.click(screen.getByRole('button', { name: 'Load sample' }));
-    await userEvent.click(screen.getByRole('button', { name: 'Start quiz' }));
+    importSample();
+    await userEvent.click(
+      screen.getByRole('button', { name: 'Start Quiz Simulation Now' }),
+    );
     await userEvent.click(screen.getByRole('button', { name: 'Exit quiz' }));
+    await userEvent.click(
+      within(mainNav()).getByRole('button', { name: 'Library' }),
+    );
 
     await userEvent.click(screen.getByRole('button', { name: 'Start' }));
 

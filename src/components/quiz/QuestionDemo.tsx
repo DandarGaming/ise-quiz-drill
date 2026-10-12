@@ -2,8 +2,9 @@ import { useState } from 'react';
 import { HeaderBar } from './HeaderBar';
 import { QuestionNavigator } from './QuestionNavigator';
 import { QuestionRenderer } from './QuestionRenderer';
+import { ResultsReview } from './ResultsReview';
 import { SubmitModal } from './SubmitModal';
-import type { Question } from '../../types/quiz';
+import type { Question, QuizConfig } from '../../types/quiz';
 
 // Temporary preview of every question type. Removed when the full quiz
 // app moves to the root page.
@@ -72,6 +73,17 @@ const questions: Question[] = [
   },
 ];
 
+const demoQuiz: QuizConfig = {
+  id: 'demo',
+  title: 'Question types preview',
+  courseCode: 'DEMO',
+  description: 'One question of every type',
+  templateMode: 'single-page',
+  timeLimitMinutes: 15,
+  questionsPerPage: 1,
+  questions,
+};
+
 export function QuestionDemo() {
   const [answers, setAnswers] = useState<Record<string, string | string[]>>({});
   const [flagged, setFlagged] = useState<Record<string, boolean>>({});
@@ -79,11 +91,26 @@ export function QuestionDemo() {
   const [isSubmitOpen, setSubmitOpen] = useState(false);
   const [isSubmitted, setSubmitted] = useState(false);
 
+  if (isSubmitted) {
+    return (
+      <ResultsReview
+        quiz={demoQuiz}
+        answers={answers}
+        timeTakenSeconds={28}
+        onRetake={() => {
+          setAnswers({});
+          setFlagged({});
+          setSubmitted(false);
+        }}
+      />
+    );
+  }
+
   // The timer is static here; the running countdown comes with the simulator
   return (
     <div className="flex min-h-screen flex-col">
       <HeaderBar
-        title="Question types preview"
+        title={demoQuiz.title}
         remainingSeconds={872}
         totalSeconds={900}
         onExit={() => window.location.assign('/')}
@@ -107,19 +134,13 @@ export function QuestionDemo() {
               }
             />
           ))}
-          {isSubmitted ? (
-            <p role="status" className="text-lg font-semibold">
-              Submitted. Scoring comes with the results view.
-            </p>
-          ) : (
-            <button
-              type="button"
-              onClick={() => setSubmitOpen(true)}
-              className="rounded-lg bg-[#006fbf] px-6 py-2.5 font-bold text-white hover:bg-[#005694]"
-            >
-              Submit Quiz
-            </button>
-          )}
+          <button
+            type="button"
+            onClick={() => setSubmitOpen(true)}
+            className="rounded-lg bg-[#006fbf] px-6 py-2.5 font-bold text-white hover:bg-[#005694]"
+          >
+            Submit Quiz
+          </button>
         </main>
         <QuestionNavigator
           questions={questions}

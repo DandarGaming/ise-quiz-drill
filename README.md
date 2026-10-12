@@ -47,7 +47,29 @@ npm run dev
 - **Deploy** (`.github/workflows/deploy-static.yml`) builds the site and runs
   `cdk synth` on pull requests. On `main` it deploys the prerendered pages to
   S3 and CloudFront and smoke tests the live URL.
-- The `Dockerfile` builds the SSR server image, which exposes `/api/health`.
+- **Container Image** (`.github/workflows/container.yml`) builds the SSR
+  server image with Podman and smoke tests `/api/health` on pull requests. On
+  `main` it pushes the image to ECR, tagged with the short commit SHA and
+  `latest` ([ADR-005](docs/adr/ADR-005-build-images-with-podman.md)).
+
+## Container image
+
+The `Dockerfile` builds the SSR server image, which exposes `/api/health`.
+Build in Docker format so the `HEALTHCHECK` is kept:
+
+```sh
+podman build --format docker -t ise-quiz-drill .
+podman run --rm -p 4321:4321 ise-quiz-drill
+```
+
+To push by hand (CI does this on every merge to `main`):
+
+```sh
+REGISTRY=468204079455.dkr.ecr.eu-west-1.amazonaws.com
+aws ecr get-login-password --region eu-west-1 |
+  podman login --username AWS --password-stdin "$REGISTRY"
+podman push ise-quiz-drill "$REGISTRY/ise-quiz-drill:v2.0.0"
+```
 
 ## Documentation
 

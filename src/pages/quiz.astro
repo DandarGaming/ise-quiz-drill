@@ -1,5 +1,6 @@
 ---
-import { QuestionDemo } from '../components/quiz/QuestionDemo';
+import { QuizSimulator } from '../components/quiz/QuizSimulator';
+import { demoQuiz } from '../components/quiz/demoQuiz';
 import '../styles/quiz.css';
 
 export const prerender = true;
@@ -11,9 +12,9 @@ export const prerender = true;
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <meta name="robots" content="noindex" />
-    <title>Question types preview</title>
+    <title>Quiz preview</title>
   </head>
-  <body class="bg-[#f8fafc] font-sans text-gray-900 antialiased">
-    <QuestionDemo client:only="react" />
+  <body class="bg-white font-sans text-gray-900 antialiased">
+    <QuizSimulator quiz={demoQuiz} client:only="react" />
   </body>
 </html>

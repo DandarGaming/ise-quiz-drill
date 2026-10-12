@@ -108,7 +108,6 @@ export function QuizSimulator({
   const submittedRef = useRef(false);
   const warned = useRef(new Set<number>());
 
-  // Auto-save on every change while the attempt is open
   useEffect(() => {
     if (!submitted && storage) safely(() => saveAttempt(storage, state));
   }, [state, submitted, storage]);

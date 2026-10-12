@@ -1,0 +1,51 @@
+name: Container Image
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+env:
+  REGISTRY: 468204079455.dkr.ecr.eu-west-1.amazonaws.com
+  REPOSITORY: ise-quiz-drill
+
+jobs:
+  image:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v7
+
+      # The default OCI format drops HEALTHCHECK; Docker format keeps it
+      - name: Build image with Podman
+        run: podman build --format docker -t "$REPOSITORY:$GITHUB_SHA" .
+
+      - name: Smoke test the container
+        run: |
+          podman run -d --name app -p 4321:4321 "$REPOSITORY:$GITHUB_SHA"
+          curl -fsS --retry 10 --retry-delay 2 --retry-all-errors http://localhost:4321/api/health
+          curl -fsS http://localhost:4321/ | grep -q "<title>Quiz Drill</title>"
+
+      - name: Show container logs
+        if: failure()
+        run: podman logs app
+
+      - name: Configure AWS credentials
+        if: github.event_name == 'push'
+        uses: aws-actions/configure-aws-credentials@v6
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: eu-west-1
+
+      - name: Log in to Amazon ECR
+        if: github.event_name == 'push'
+        run: aws ecr get-login-password | podman login --username AWS --password-stdin "$REGISTRY"
+
+      - name: Push image to ECR
+        if: github.event_name == 'push'
+        run: |
+          for tag in "${GITHUB_SHA::7}" latest; do
+            podman push "$REPOSITORY:$GITHUB_SHA" "$REGISTRY/$REPOSITORY:$tag"
+          done

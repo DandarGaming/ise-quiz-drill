@@ -1,11 +1,12 @@
 // @vitest-environment jsdom
-import { beforeEach, describe, it, expect } from 'vitest';
+import { afterEach, beforeEach, describe, it, expect, vi } from 'vitest';
 import { render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { AppContainer } from './AppContainer';
 import { loadSavedQuizzes } from '../../utils/attemptStorage';
 
 beforeEach(() => localStorage.clear());
+afterEach(() => vi.restoreAllMocks());
 
 const mainNav = () => screen.getByRole('navigation', { name: 'Main' });
 
@@ -68,6 +69,7 @@ describe('AppContainer', () => {
   });
 
   it('starts a saved test from the library', async () => {
+    vi.spyOn(window, 'confirm').mockReturnValue(true);
     render(<AppContainer />);
     await userEvent.click(screen.getByRole('button', { name: 'Load sample' }));
     await userEvent.click(screen.getByRole('button', { name: 'Start quiz' }));

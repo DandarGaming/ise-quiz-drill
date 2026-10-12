@@ -1,7 +1,8 @@
-import { useState } from 'react';
-import { Bookmark, Check, Strikethrough } from 'lucide-react';
+import React, { useEffect, useRef, useState } from 'react';
+import { ArrowRight, Bookmark, RefreshCw, X } from 'lucide-react';
 import type { Question } from '../../types/quiz';
 import { isAnswered, type Answer } from '../../utils/answers';
+import { gradeQuestion } from '../../utils/grading';
 
 export interface QuestionRendererProps {
   question: Question;
@@ -9,196 +10,553 @@ export interface QuestionRendererProps {
   isFlagged: boolean;
   onAnswerChange: (answer: Answer) => void;
   onToggleFlag: () => void;
+  reviewMode?: boolean;
 }
 
-const BLANK = '[BLANK]';
+// Straight, sharp checkmark used across the quiz UI
+export const StraightCheck = ({
+  className = 'w-4 h-4',
+}: {
+  className?: string;
+}) => (
+  <svg
+    aria-hidden="true"
+    viewBox="0 0 24 24"
+    className={className}
+    fill="none"
+    stroke="currentColor"
+    strokeWidth="2.5"
+    strokeLinecap="square"
+    strokeLinejoin="miter"
+  >
+    <polyline points="20 6 9 17 4 12" />
+  </svg>
+);
 
-export function CodeSnippet({ code }: { code: string }) {
+const StrikethroughIcon = ({
+  className = 'w-5 h-5',
+}: {
+  className?: string;
+}) => (
+  <svg
+    aria-hidden="true"
+    viewBox="0 0 24 24"
+    className={className}
+    fill="none"
+    stroke="currentColor"
+    strokeWidth="2.2"
+    strokeLinecap="round"
+    strokeLinejoin="round"
+  >
+    <path d="M16 4H9a3 3 0 0 0-3 3c0 1.5 1 2.5 3 3l6 2c2 1 3 2 3 3.5a3.5 3.5 0 0 1-3.5 3.5H7" />
+    <line x1="3" y1="12" x2="21" y2="12" />
+  </svg>
+);
+
+const KEYWORDS = [
+  'export',
+  'function',
+  'if',
+  'throw',
+  'return',
+  'const',
+  'let',
+  'var',
+  'import',
+  'from',
+  'new',
+  'class',
+];
+const BUILTINS = ['RangeError', 'Math', 'ceil'];
+
+// Line-numbered code block with light syntax colouring
+export const CodeBlock: React.FC<{ code: string }> = ({ code }) => {
   const lines = code.split('\n');
+
+  const renderHighlightedLine = (line: string) => {
+    if (line.trim().startsWith('//')) {
+      return <span className="text-[#6a9955] italic">{line}</span>;
+    }
+
+    const parts = line.split(
+      /(\b(?:export|function|if|throw|return|const|let|var|import|from|new|class|RangeError|Math|ceil)\b|".*?"|'.*?'|`.*?`|\/\/.*)/g,
+    );
+
+    return parts.map((part, i) => {
+      if (KEYWORDS.includes(part)) {
+        return (
+          <span key={i} className="text-[#c586c0] font-semibold">
+            {part}
+          </span>
+        );
+      }
+      if (BUILTINS.includes(part)) {
+        return (
+          <span key={i} className="text-[#4ec9b0]">
+            {part}
+          </span>
+        );
+      }
+      if (
+        part.startsWith('"') ||
+        part.startsWith("'") ||
+        part.startsWith('`')
+      ) {
+        return (
+          <span key={i} className="text-[#ce9178]">
+            {part}
+          </span>
+        );
+      }
+      if (part.startsWith('//')) {
+        return (
+          <span key={i} className="text-[#6a9955] italic">
+            {part}
+          </span>
+        );
+      }
+      return part;
+    });
+  };
+
   return (
-    <figure
+    <div
+      role="figure"
       aria-label="Code snippet"
-      className="my-6 flex overflow-x-auto rounded-lg border border-gray-800 bg-[#1e1e1e] font-mono text-base leading-relaxed"
+      className="my-6 rounded-lg overflow-hidden border border-gray-800 bg-[#1e1e1e] shadow-md font-mono text-base select-text"
     >
-      <div
-        aria-hidden="true"
-        className="min-w-[44px] select-none border-r border-[#2d2d2d] bg-[#181818] px-3.5 py-3.5 text-right text-[#858585]"
-      >
-        {lines.map((_, index) => (
-          <div key={index}>{index + 1}</div>
-        ))}
+      <div className="overflow-x-auto custom-scrollbar flex">
+        <div
+          aria-hidden="true"
+          className="bg-[#181818] text-[#858585] select-none py-3.5 px-3.5 text-right font-mono text-base border-r border-[#2d2d2d] flex flex-col justify-start min-w-[44px]"
+        >
+          {lines.map((_, idx) => (
+            <div key={idx} className="leading-relaxed h-6">
+              {idx + 1}
+            </div>
+          ))}
+        </div>
+        <div className="py-3.5 px-4 text-[#d4d4d4] flex-1 whitespace-pre leading-relaxed font-mono">
+          {lines.map((line, idx) => (
+            <div key={idx} className="h-6">
+              {renderHighlightedLine(line)}
+            </div>
+          ))}
+        </div>
       </div>
-      <pre className="flex-1 px-4 py-3.5 text-[#d4d4d4]">
-        <code>{code}</code>
-      </pre>
-    </figure>
+    </div>
   );
-}
+};
 
-const textInput =
-  'rounded-md border border-gray-300 bg-white outline-none focus:border-[#006fbf] focus:ring-1 focus:ring-[#006fbf]';
-
-export function QuestionRenderer({
+export const QuestionRenderer: React.FC<QuestionRendererProps> = ({
   question,
   answer,
   isFlagged,
   onAnswerChange,
   onToggleFlag,
-}: QuestionRendererProps) {
+  reviewMode = false,
+}) => {
   // Struck-out options are a reading aid only, so they are not saved
-  const [struck, setStruck] = useState<Record<string, boolean>>({});
+  const [struckOptions, setStruckOptions] = useState<Record<string, boolean>>(
+    {},
+  );
+  const [hoveredOptionId, setHoveredOptionId] = useState<string | null>(null);
+  const [hoveredStrikethroughId, setHoveredStrikethroughId] = useState<
+    string | null
+  >(null);
+  const [isSaving, setIsSaving] = useState<boolean>(false);
+  const saveTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const headingId = `${question.id}-heading`;
   const isMulti = question.type === 'multi-select';
-  const selected = Array.isArray(answer) ? answer : [];
+  const selectedList = Array.isArray(answer) ? answer : [];
+
   const isSelected = (optionId: string) =>
-    isMulti ? selected.includes(optionId) : answer === optionId;
+    isMulti ? selectedList.includes(optionId) : answer === optionId;
 
-  const selectOption = (optionId: string) => {
-    if (struck[optionId]) setStruck((prev) => ({ ...prev, [optionId]: false }));
-    if (!isMulti) return onAnswerChange(optionId);
-    onAnswerChange(
-      selected.includes(optionId)
-        ? selected.filter((id) => id !== optionId)
-        : [...selected, optionId],
-    );
+  const triggerSaveState = () => {
+    setIsSaving(true);
+    if (saveTimeoutRef.current) clearTimeout(saveTimeoutRef.current);
+    saveTimeoutRef.current = setTimeout(() => setIsSaving(false), 450);
   };
 
-  const toggleStrike = (optionId: string) => {
-    const willStrike = !struck[optionId];
-    if (willStrike && isSelected(optionId)) {
-      onAnswerChange(isMulti ? selected.filter((id) => id !== optionId) : '');
-    }
-    setStruck((prev) => ({ ...prev, [optionId]: willStrike }));
-  };
-
-  const promptParts = question.prompt.split(BLANK);
-  const blankValues = Array.from(
-    { length: promptParts.length - 1 },
-    (_, index) => (Array.isArray(answer) ? answer[index] : undefined) ?? '',
+  useEffect(
+    () => () => {
+      if (saveTimeoutRef.current) clearTimeout(saveTimeoutRef.current);
+    },
+    [],
   );
-  const changeBlank = (index: number, value: string) => {
-    const next = [...blankValues];
-    next[index] = value;
-    onAnswerChange(next);
+
+  // Striking out a ticked option also unticks it
+  const toggleStruck = (optionId: string) => {
+    const willBeStruck = !struckOptions[optionId];
+    if (isSelected(optionId) && willBeStruck) {
+      onAnswerChange(
+        isMulti ? selectedList.filter((id) => id !== optionId) : '',
+      );
+    }
+    setStruckOptions((prev) => ({ ...prev, [optionId]: willBeStruck }));
   };
 
-  const pointLabel = question.points === 1 ? 'point' : 'points';
+  // Ticking a struck option also removes the strike
+  const handleSelectOption = (optionId: string) => {
+    if (reviewMode) return;
+    if (struckOptions[optionId]) {
+      setStruckOptions((prev) => ({ ...prev, [optionId]: false }));
+    }
+    triggerSaveState();
+    if (isMulti) {
+      onAnswerChange(
+        selectedList.includes(optionId)
+          ? selectedList.filter((id) => id !== optionId)
+          : [...selectedList, optionId],
+      );
+    } else {
+      onAnswerChange(optionId);
+    }
+  };
+
+  const correctIds = Array.isArray(question.correctAnswer)
+    ? question.correctAnswer
+    : [question.correctAnswer];
+  const isOptionCorrect = (optionId: string) => correctIds.includes(optionId);
+
+  const earnedPoints = gradeQuestion(question, answer).earnedPoints;
+  const answered = isAnswered(answer);
+
+  const blankParts = question.prompt.split('[BLANK]');
+  const blankValues = Array.from(
+    { length: blankParts.length - 1 },
+    (_, idx) => (Array.isArray(answer) ? answer[idx] : undefined) ?? '',
+  );
 
   return (
-    <fieldset aria-labelledby={headingId} className="mb-2 bg-white py-1">
-      <div className="mb-2 flex items-center justify-between pb-2">
+    <div
+      role="group"
+      aria-labelledby={headingId}
+      className="bg-white py-1 mb-2 select-none"
+    >
+      {/* Header Line */}
+      <div className="flex items-center justify-between pb-2 mb-2">
         <div className="flex items-center gap-2.5">
           <h2
             id={headingId}
-            className="text-lg font-bold tracking-tight text-gray-900"
+            className="text-lg font-bold text-gray-900 tracking-tight"
           >
-            Question {question.number} ({question.points} {pointLabel})
+            Question {question.number}
           </h2>
-          {isAnswered(answer) && (
-            <span className="ml-1 flex items-center gap-1.5 text-sm italic text-gray-500">
-              <Check aria-hidden="true" className="h-3.5 w-3.5" />
-              Saved
+
+          {!reviewMode &&
+            (isSaving ? (
+              <span className="flex items-center gap-1.5 text-gray-500 text-sm italic ml-1 select-none">
+                <span>Saving...</span>
+                <RefreshCw
+                  aria-hidden="true"
+                  className="w-3.5 h-3.5 text-gray-600 animate-spin stroke-[2.2]"
+                />
+              </span>
+            ) : answered ? (
+              <span className="flex items-center gap-1.5 text-gray-500 text-sm italic ml-1 select-none">
+                <StraightCheck className="w-3.5 h-3.5 text-gray-700" />
+                <span>Saved</span>
+              </span>
+            ) : (
+              <span
+                aria-hidden="true"
+                className="text-gray-400 text-sm italic ml-1 font-mono"
+              >
+                --
+              </span>
+            ))}
+
+          {reviewMode && (
+            <span
+              className={`px-2.5 py-0.5 rounded text-xs font-semibold ${
+                earnedPoints > 0
+                  ? 'bg-green-100 text-green-800'
+                  : 'bg-red-100 text-red-800'
+              }`}
+            >
+              {earnedPoints} / {question.points} point
             </span>
           )}
         </div>
-        <button
-          type="button"
-          aria-label="Flag question"
-          aria-pressed={isFlagged}
-          onClick={onToggleFlag}
-          className="flex h-8 w-8 items-center justify-center rounded-lg hover:bg-gray-100"
-        >
-          <Bookmark
-            aria-hidden="true"
-            className={
-              isFlagged
-                ? 'h-5 w-5 fill-[#006fbf] text-[#006fbf]'
-                : 'h-5 w-5 text-gray-500'
-            }
-          />
-        </button>
+
+        {!reviewMode && (
+          <button
+            type="button"
+            onClick={onToggleFlag}
+            aria-label="Flag question"
+            aria-pressed={isFlagged}
+            className="w-8 h-8 flex items-center justify-center rounded-lg bg-transparent hover:bg-gray-100/60 transition-colors flex-shrink-0"
+            title="Bookmark Question"
+          >
+            <Bookmark
+              aria-hidden="true"
+              className={`w-5 h-5 transition-colors ${
+                isFlagged
+                  ? 'fill-[#006fbf] text-[#006fbf]'
+                  : 'text-gray-500 hover:text-gray-800 stroke-[2]'
+              }`}
+            />
+          </button>
+        )}
       </div>
 
-      <div className="space-y-6 pl-3">
-        <p className="whitespace-pre-wrap text-lg leading-relaxed text-gray-900">
+      {/* Question Content Area - Indented slightly to the right */}
+      <div className="pl-3 space-y-6">
+        <div className="text-gray-900 text-lg leading-relaxed font-normal select-text whitespace-pre-wrap">
           {question.type === 'multi-blank'
-            ? promptParts.map((part, index) => (
-                <span key={index}>
+            ? blankParts.map((part, idx) => (
+                <React.Fragment key={idx}>
                   {part}
-                  {index < blankValues.length && (
+                  {idx < blankValues.length && (
                     <input
                       type="text"
-                      aria-label={`Blank ${index + 1}`}
-                      value={blankValues[index]}
-                      onChange={(event) =>
-                        changeBlank(index, event.target.value)
-                      }
-                      className={`${textInput} mx-1 inline-block w-40 px-2.5 py-1.5 text-center text-base font-bold`}
+                      aria-label={`Blank ${idx + 1}`}
+                      disabled={reviewMode}
+                      value={blankValues[idx]}
+                      onChange={(e) => {
+                        triggerSaveState();
+                        const next = [...blankValues];
+                        next[idx] = e.target.value;
+                        onAnswerChange(next);
+                      }}
+                      className={`inline-block w-40 px-2.5 py-1.5 mx-1 border rounded-md text-base text-center font-bold outline-none transition-colors ${
+                        reviewMode
+                          ? 'bg-gray-50 border-gray-300 text-gray-800'
+                          : 'bg-white border-gray-300 focus:border-[#006fbf] focus:ring-1 focus:ring-[#006fbf]'
+                      }`}
                     />
                   )}
-                </span>
+                </React.Fragment>
               ))
             : question.prompt}
-        </p>
+        </div>
 
-        {question.codeSnippet && <CodeSnippet code={question.codeSnippet} />}
-
-        {question.type === 'short-answer' && (
-          <input
-            type="text"
-            aria-label="Answer"
-            placeholder="Type your answer here..."
-            value={typeof answer === 'string' ? answer : ''}
-            onChange={(event) => onAnswerChange(event.target.value)}
-            className={`${textInput} w-full max-w-lg px-3 py-2.5 text-lg`}
-          />
+        {reviewMode && question.type === 'multi-blank' && (
+          <div className="mt-4 p-4 bg-gray-50 border border-gray-200 rounded-md">
+            <span className="font-semibold text-gray-800 mb-2 block">
+              Correct Answers:
+            </span>
+            <ul className="list-decimal pl-5 space-y-1">
+              {correctIds.map((ans, idx) => (
+                <li key={idx} className="text-gray-700 text-base">
+                  <span className="font-mono text-blue-700 font-bold ml-1">
+                    {ans}
+                  </span>
+                </li>
+              ))}
+            </ul>
+          </div>
         )}
 
-        {question.options && question.options.length > 0 && (
-          <ul className="flex flex-col">
-            {question.options.map((option) => {
-              const inputId = `${question.id}-${option.id}`;
-              const isStruck = !!struck[option.id];
-              return (
-                <li
-                  key={option.id}
-                  className="group flex items-center justify-between px-2.5 py-2.5 hover:bg-[#f0f7fd] has-[:checked]:bg-[#dbeefe]"
-                >
-                  <label
-                    htmlFor={inputId}
-                    className={`flex flex-1 cursor-pointer items-center gap-3 pr-2 ${isStruck ? 'opacity-40' : ''}`}
+        {question.codeSnippet && <CodeBlock code={question.codeSnippet} />}
+
+        <div className="mt-6">
+          {question.type === 'short-answer' && (
+            <div className="space-y-2">
+              <input
+                type="text"
+                aria-label="Answer"
+                disabled={reviewMode}
+                value={typeof answer === 'string' ? answer : ''}
+                onChange={(e) => {
+                  triggerSaveState();
+                  onAnswerChange(e.target.value);
+                }}
+                placeholder="Type your answer here..."
+                className={`w-full max-w-lg px-3 py-2.5 border rounded-md text-lg outline-none transition-colors ${
+                  reviewMode
+                    ? 'bg-gray-50 border-gray-300 text-gray-800'
+                    : 'bg-white border-gray-300 focus:border-[#006fbf] focus:ring-1 focus:ring-[#006fbf]'
+                }`}
+              />
+              {reviewMode && (
+                <div className="text-lg mt-2">
+                  <span className="font-semibold text-gray-700">
+                    Correct Answer:{' '}
+                  </span>
+                  <span className="font-mono text-blue-700">
+                    {correctIds.join(' or ')}
+                  </span>
+                </div>
+              )}
+            </div>
+          )}
+
+          {question.options && question.options.length > 0 && (
+            <div className="flex flex-col bg-white">
+              {question.options.map((option) => {
+                const inputId = `${question.id}-${option.id}`;
+                const selected = isSelected(option.id);
+                const correct = isOptionCorrect(option.id);
+                const isWrongSelection = selected && !correct;
+                const isStruck = !!struckOptions[option.id];
+                const isOptionHovered = hoveredOptionId === option.id;
+                const isButtonHovered = hoveredStrikethroughId === option.id;
+
+                return (
+                  <div
+                    key={option.id}
+                    onMouseEnter={() => setHoveredOptionId(option.id)}
+                    onMouseLeave={() => setHoveredOptionId(null)}
+                    className={`flex items-center justify-between px-2.5 py-2.5 transition-all ${
+                      reviewMode ? 'cursor-default' : 'cursor-pointer'
+                    } ${
+                      selected && !reviewMode
+                        ? 'bg-[#dbeefe]'
+                        : 'bg-white hover:bg-[#f0f7fd]'
+                    } ${reviewMode && correct ? 'bg-blue-50/80' : ''} ${
+                      reviewMode && isWrongSelection ? 'bg-red-50/80' : ''
+                    }`}
                   >
-                    <input
-                      id={inputId}
-                      type={isMulti ? 'checkbox' : 'radio'}
-                      name={question.id}
-                      value={option.id}
-                      checked={isSelected(option.id)}
-                      onChange={() => selectOption(option.id)}
-                      className="h-5 w-5 flex-shrink-0 accent-[#006fbf]"
-                    />
-                    <span
-                      className={`text-lg leading-snug text-gray-900 ${isStruck ? 'text-gray-500 line-through' : ''}`}
+                    <label
+                      htmlFor={inputId}
+                      className={`flex items-center gap-3 flex-1 pr-2 transition-opacity ${
+                        reviewMode ? 'cursor-default' : 'cursor-pointer'
+                      } ${isStruck ? 'opacity-40' : 'opacity-100'}`}
                     >
-                      {option.text}
-                    </span>
-                  </label>
-                  <button
-                    type="button"
-                    aria-label={`Strike out ${option.text}`}
-                    aria-pressed={isStruck}
-                    onClick={() => toggleStrike(option.id)}
-                    className={`rounded-md p-1.5 text-gray-500 hover:bg-gray-200 hover:text-gray-900 focus:opacity-100 group-hover:opacity-100 ${isStruck ? 'bg-gray-200 text-gray-900 opacity-100' : 'opacity-0'}`}
-                  >
-                    <Strikethrough aria-hidden="true" className="h-5 w-5" />
-                  </button>
-                </li>
-              );
-            })}
-          </ul>
+                      {/* The native input gives keyboard and screen reader
+                          support; the box next to it is what users see */}
+                      <input
+                        id={inputId}
+                        type={isMulti ? 'checkbox' : 'radio'}
+                        name={question.id}
+                        value={option.id}
+                        checked={selected}
+                        disabled={reviewMode}
+                        onChange={() => handleSelectOption(option.id)}
+                        className="peer sr-only"
+                      />
+
+                      {reviewMode && (
+                        <div
+                          aria-hidden="true"
+                          className="flex items-center gap-1 flex-shrink-0"
+                        >
+                          {correct && (
+                            <span
+                              className="flex items-center text-[#006fbf]"
+                              title="Correct Answer"
+                            >
+                              <ArrowRight className="w-5 h-5 mr-0.5" />
+                              <StraightCheck className="w-5 h-5 text-[#006fbf]" />
+                            </span>
+                          )}
+                          {isWrongSelection && (
+                            <span
+                              className="text-red-600 font-bold"
+                              title="Incorrect Selection"
+                            >
+                              <X className="w-5 h-5" />
+                            </span>
+                          )}
+                        </div>
+                      )}
+
+                      <div
+                        aria-hidden="true"
+                        className="flex-shrink-0 flex items-center rounded peer-focus-visible:ring-2 peer-focus-visible:ring-[#006fbf] peer-focus-visible:ring-offset-2"
+                      >
+                        {isMulti ? (
+                          <div
+                            className={`w-[22px] h-[22px] rounded-[5px] flex items-center justify-center transition-all border-[1.8px] flex-shrink-0 ${
+                              selected
+                                ? 'bg-white border-gray-600'
+                                : isOptionHovered
+                                  ? 'bg-white border-[#006fbf]'
+                                  : 'bg-white border-gray-400'
+                            }`}
+                          >
+                            {selected && (
+                              <svg
+                                viewBox="0 0 24 24"
+                                className="w-4 h-4 text-gray-900 stroke-[3]"
+                                fill="none"
+                                stroke="currentColor"
+                              >
+                                <polyline
+                                  points="20 6 9 17 4 12"
+                                  strokeLinecap="square"
+                                  strokeLinejoin="miter"
+                                />
+                              </svg>
+                            )}
+                          </div>
+                        ) : (
+                          <div
+                            className={`w-5 h-5 rounded-full flex items-center justify-center transition-all border-[1.8px] flex-shrink-0 ${
+                              selected || isOptionHovered
+                                ? 'bg-white border-[#006fbf]'
+                                : 'bg-white border-gray-400'
+                            }`}
+                          >
+                            {selected && (
+                              <div className="w-2.5 h-2.5 rounded-full bg-[#006fbf]" />
+                            )}
+                          </div>
+                        )}
+                      </div>
+
+                      <span
+                        className={`text-lg leading-snug font-normal text-gray-900 ${
+                          isStruck ? 'line-through text-gray-500' : ''
+                        }`}
+                      >
+                        {option.text}
+                      </span>
+                      {reviewMode && (correct || selected) && (
+                        <span className="sr-only">
+                          {selected
+                            ? `Your answer, ${correct ? 'correct' : 'incorrect'}`
+                            : 'Correct answer'}
+                        </span>
+                      )}
+                    </label>
+
+                    {!reviewMode && (
+                      <div className="w-8 h-8 flex items-center justify-center flex-shrink-0 opacity-100">
+                        <button
+                          type="button"
+                          onClick={() => toggleStruck(option.id)}
+                          onMouseEnter={() =>
+                            setHoveredStrikethroughId(option.id)
+                          }
+                          onMouseLeave={() => setHoveredStrikethroughId(null)}
+                          aria-label={`Strike out ${option.text}`}
+                          aria-pressed={isStruck}
+                          className={`p-1.5 rounded-md transition-colors ${
+                            isStruck || isOptionHovered
+                              ? 'opacity-100'
+                              : 'opacity-0 focus:opacity-100'
+                          } ${
+                            isButtonHovered || isStruck
+                              ? 'bg-gray-200/80 text-gray-900'
+                              : 'bg-transparent text-gray-500 hover:text-gray-800'
+                          }`}
+                          title={
+                            isStruck ? 'Unstrike Option' : 'Strikeout Option'
+                          }
+                        >
+                          <StrikethroughIcon className="w-5 h-5" />
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </div>
+
+        {reviewMode && question.explanation && (
+          <div className="mt-5 p-4 bg-gray-50 border border-gray-200 rounded-md text-base text-gray-700">
+            <span className="font-bold text-gray-900">Explanation: </span>
+            {question.explanation}
+          </div>
         )}
       </div>
-    </fieldset>
+    </div>
   );
-}
+};

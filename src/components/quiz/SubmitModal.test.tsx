@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 import { useState } from 'react';
 import { describe, it, expect, vi } from 'vitest';
-import { render, screen } from '@testing-library/react';
+import { render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { SubmitModal } from './SubmitModal';
 import type { Question } from '../../types/quiz';
@@ -56,7 +56,7 @@ describe('SubmitModal', () => {
     await open();
 
     const dialog = screen.getByRole('dialog', {
-      name: 'Submit quiz confirmation',
+      name: 'Submit Quiz Confirmation',
     });
     expect(dialog).toHaveAttribute('aria-modal', 'true');
     expect(dialog).toHaveTextContent('Submitting will end your attempt');
@@ -66,7 +66,13 @@ describe('SubmitModal', () => {
     render(<Harness answers={{ q2: 'a' }} />);
     await open();
 
-    expect(screen.getByRole('dialog')).toHaveTextContent('Unanswered: Q1, Q3');
+    const dialog = screen.getByRole('dialog');
+    expect(dialog).toHaveTextContent('Unanswered Questions (2)');
+    expect(
+      within(dialog)
+        .getAllByRole('listitem')
+        .map((item) => item.textContent),
+    ).toEqual(['Q1', 'Q3']);
   });
 
   it('says when every question is answered', async () => {

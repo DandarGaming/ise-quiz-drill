@@ -1,6 +1,7 @@
-import { Check } from 'lucide-react';
+import React from 'react';
 import type { Question } from '../../types/quiz';
 import { isAnswered, type Answer } from '../../utils/answers';
+import { StraightCheck } from './QuestionRenderer';
 
 export interface QuestionNavigatorProps {
   questions: Question[];
@@ -10,82 +11,87 @@ export interface QuestionNavigatorProps {
   onSelect: (question: Question) => void;
 }
 
-function tileLabel(question: Question, answered: boolean, flagged: boolean) {
-  return [
-    `Question ${question.number}`,
-    answered && 'answered',
-    flagged && 'flagged',
-  ]
+const tileLabel = (question: Question, answered: boolean, flagged: boolean) =>
+  [`Question ${question.number}`, answered && 'answered', flagged && 'flagged']
     .filter(Boolean)
     .join(', ');
-}
 
-export function QuestionNavigator({
+export const QuestionNavigator: React.FC<QuestionNavigatorProps> = ({
   questions,
   currentPage,
   answers,
   flagged,
   onSelect,
-}: QuestionNavigatorProps) {
-  const pages = [...new Set(questions.map((q) => q.page))].sort(
+}) => {
+  const pages = Array.from(new Set(questions.map((q) => q.page))).sort(
     (a, b) => a - b,
   );
 
   return (
     <nav
       aria-label="Questions"
-      className="w-56 flex-shrink-0 space-y-5 bg-white px-4 pt-6"
+      className="w-56 bg-white pt-6 px-4 pb-20 flex flex-col h-full overflow-hidden select-none flex-shrink-0"
     >
-      {pages.map((page) => (
-        <section key={page} className="space-y-2">
-          <h3 className="text-base font-bold text-gray-900">Page {page}</h3>
-          <ul className="flex flex-wrap gap-3">
-            {questions
-              .filter((q) => q.page === page)
-              .map((question) => {
-                const answered = isAnswered(answers[question.id]);
-                const isFlagged = !!flagged[question.id];
-                const isCurrent = question.page === currentPage;
-                return (
-                  <li key={question.id}>
+      <div className="flex-1 overflow-y-auto space-y-5 pr-2 custom-scrollbar">
+        {pages.map((pageNo) => (
+          <div key={pageNo} className="space-y-2">
+            <h3 className="text-base font-bold text-gray-900">
+              Page {pageNo}:
+            </h3>
+
+            <div className="flex flex-wrap gap-3">
+              {questions
+                .filter((q) => q.page === pageNo)
+                .map((q) => {
+                  const answered = isAnswered(answers[q.id]);
+                  const isFlagged = !!flagged[q.id];
+
+                  return (
                     <button
                       type="button"
-                      aria-label={tileLabel(question, answered, isFlagged)}
-                      aria-current={isCurrent ? 'true' : undefined}
-                      onClick={() => onSelect(question)}
-                      className={`flex h-16 w-11 flex-col items-center justify-between overflow-hidden rounded-lg border hover:border-[#006fbf] ${
-                        isCurrent
-                          ? 'border-2 border-gray-900'
-                          : 'border-gray-300'
-                      } ${answered ? 'bg-[#dbeefe]' : 'bg-white'}`}
+                      key={q.id}
+                      onClick={() => onSelect(q)}
+                      aria-label={tileLabel(q, answered, isFlagged)}
+                      aria-current={q.page === currentPage ? 'true' : undefined}
+                      className="relative w-11 h-16 bg-white border border-gray-300 rounded-lg overflow-hidden cursor-pointer hover:border-[#006fbf] transition-all flex flex-col justify-between items-center shadow-2xs focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#006fbf]"
                     >
-                      <span
-                        aria-hidden="true"
-                        className={`flex h-9 w-full items-center justify-center pb-1 text-sm font-bold ${
-                          isFlagged
-                            ? 'bg-[#006fbf] text-white [clip-path:polygon(0_0,100%_0,100%_75%,50%_100%,0_75%)]'
-                            : 'text-[#006fbf]'
-                        }`}
-                      >
-                        {question.number}
-                      </span>
-                      <span
-                        aria-hidden="true"
-                        className="flex h-6 items-center pb-1.5 text-xs text-gray-700"
-                      >
+                      {/* Top box, fixed size so flagging causes no layout shift */}
+                      <div className="w-full h-9 relative flex items-center justify-center font-bold text-sm leading-none">
+                        {isFlagged && (
+                          <div
+                            className="absolute inset-0 bg-[#006fbf]"
+                            style={{
+                              clipPath:
+                                'polygon(0 0, 100% 0, 100% 75%, 50% 100%, 0 75%)',
+                            }}
+                          />
+                        )}
+                        <span
+                          className={`relative z-10 pb-1 ${
+                            isFlagged
+                              ? 'text-white font-bold'
+                              : 'text-[#006fbf] font-bold'
+                          }`}
+                        >
+                          {q.number}
+                        </span>
+                      </div>
+
+                      {/* Bottom box: check when answered, dashes otherwise */}
+                      <div className="w-full h-6 pb-1.5 flex items-center justify-center text-xs text-gray-700 leading-none">
                         {answered ? (
-                          <Check className="h-3.5 w-3.5" />
+                          <StraightCheck className="w-3.5 h-3.5 text-gray-700" />
                         ) : (
                           <span className="font-mono text-gray-500">--</span>
                         )}
-                      </span>
+                      </div>
                     </button>
-                  </li>
-                );
-              })}
-          </ul>
-        </section>
-      ))}
+                  );
+                })}
+            </div>
+          </div>
+        ))}
+      </div>
     </nav>
   );
-}
+};

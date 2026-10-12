@@ -1,6 +1,6 @@
 import { ArrowRight, Check, X } from 'lucide-react';
 import type { Question, QuestionResult } from '../../types/quiz';
-import { CodeSnippet } from './QuestionRenderer';
+import { CodeBlock } from './QuestionRenderer';
 
 export interface QuestionReviewProps {
   question: Question;
@@ -46,7 +46,7 @@ export function QuestionReview({ question, result }: QuestionReviewProps) {
           : question.prompt}
       </p>
 
-      {question.codeSnippet && <CodeSnippet code={question.codeSnippet} />}
+      {question.codeSnippet && <CodeBlock code={question.codeSnippet} />}
 
       {question.options && question.options.length > 0 && (
         <ul className="pl-3">

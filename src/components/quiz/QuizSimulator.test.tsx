@@ -70,10 +70,10 @@ describe('QuizSimulator', () => {
     ).toBeInTheDocument();
     expect(pageLabel()).toHaveTextContent('Page 1 of 3');
     expect(
-      screen.getAllByRole('button', { name: 'Previous page' })[0],
+      screen.getAllByRole('button', { name: 'Previous Page' })[0],
     ).toBeDisabled();
 
-    await u.click(screen.getAllByRole('button', { name: 'Next page' })[0]);
+    await u.click(screen.getAllByRole('button', { name: 'Next Page' })[0]);
 
     expect(
       screen.getByRole('heading', { name: /^Question 2/ }),
@@ -87,7 +87,7 @@ describe('QuizSimulator', () => {
     expect(
       screen.getAllByRole('heading', { name: /^Question \d/ }),
     ).toHaveLength(3);
-    expect(screen.queryByRole('button', { name: 'Next page' })).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Next Page' })).toBeNull();
   });
 
   it('saves answers and restores them after a reload', async () => {
@@ -95,7 +95,7 @@ describe('QuizSimulator', () => {
     const { unmount } = render(<QuizSimulator quiz={quiz} />);
 
     await u.click(screen.getByRole('radio', { name: 'Right 1' }));
-    await u.click(screen.getAllByRole('button', { name: 'Next page' })[0]);
+    await u.click(screen.getAllByRole('button', { name: 'Next Page' })[0]);
     unmount();
 
     expect(loadAttempt(localStorage, 'sim')).toMatchObject({
@@ -204,7 +204,7 @@ describe('QuizSimulator', () => {
       expect.objectContaining({ type: 'copy_attempt' }),
     ]);
     expect(screen.getByRole('status')).toHaveTextContent(
-      'Copying is disabled during this quiz.',
+      'Copying text is disabled during this exam.',
     );
   });
 });

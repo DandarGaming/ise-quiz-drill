@@ -7,7 +7,14 @@ import {
   clearAttempt,
   loadHistory,
   appendHistory,
+  deleteHistoryRecord,
+  clearHistory,
+  QUIZZES_KEY,
+  loadSavedQuizzes,
+  saveQuiz,
+  deleteSavedQuiz,
 } from './attemptStorage';
+import { sampleQuiz } from '../data/sampleQuiz';
 import type { AttemptState, QuizAttemptRecord } from '../types/quiz';
 
 class MemoryStorage {
@@ -45,16 +52,7 @@ const record = (id: string): QuizAttemptRecord => ({
   timeTakenSeconds: 600,
   eventLog: [],
   answers: {},
-  quizSnapshot: {
-    id: 'quiz-1',
-    title: 'Quiz',
-    courseCode: 'CS0000',
-    description: '',
-    templateMode: 'paginated',
-    timeLimitMinutes: 15,
-    questionsPerPage: 1,
-    questions: [],
-  },
+  quizSnapshot: sampleQuiz,
 });
 
 let storage: MemoryStorage;
@@ -112,5 +110,58 @@ describe('attempt history', () => {
   it('treats corrupt history as empty', () => {
     storage.setItem(HISTORY_KEY, '"oops"');
     expect(loadHistory(storage)).toEqual([]);
+  });
+
+  it('skips broken records and keeps the good ones', () => {
+    storage.setItem(
+      HISTORY_KEY,
+      JSON.stringify([record('good'), { id: 'broken' }, null]),
+    );
+    expect(loadHistory(storage).map((r) => r.id)).toEqual(['good']);
+  });
+
+  it('deletes one record or clears them all', () => {
+    appendHistory(storage, record('first'));
+    appendHistory(storage, record('second'));
+
+    deleteHistoryRecord(storage, 'first');
+    expect(loadHistory(storage).map((r) => r.id)).toEqual(['second']);
+
+    clearHistory(storage);
+    expect(loadHistory(storage)).toEqual([]);
+  });
+});
+
+describe('saved quizzes', () => {
+  const other = { ...sampleQuiz, id: 'other', title: 'Other' };
+
+  it('uses a versioned key and starts empty', () => {
+    expect(QUIZZES_KEY).toBe('quiz-drill:v1:quizzes');
+    expect(loadSavedQuizzes(storage)).toEqual([]);
+  });
+
+  it('keeps the latest saved quiz first and replaces one with the same id', () => {
+    saveQuiz(storage, sampleQuiz);
+    saveQuiz(storage, other);
+    saveQuiz(storage, { ...sampleQuiz, title: 'Renamed' });
+
+    expect(loadSavedQuizzes(storage).map((q) => q.title)).toEqual([
+      'Renamed',
+      'Other',
+    ]);
+  });
+
+  it('deletes a saved quiz', () => {
+    saveQuiz(storage, sampleQuiz);
+    deleteSavedQuiz(storage, sampleQuiz.id);
+    expect(loadSavedQuizzes(storage)).toEqual([]);
+  });
+
+  it('skips saved quizzes that fail validation', () => {
+    storage.setItem(
+      QUIZZES_KEY,
+      JSON.stringify([sampleQuiz, { ...other, questions: [] }, 'junk']),
+    );
+    expect(loadSavedQuizzes(storage).map((q) => q.id)).toEqual([sampleQuiz.id]);
   });
 });

@@ -4,10 +4,11 @@ A practice tool that recreates the Brightspace quiz interface, so students can
 take mock tests built from their own notes. It runs entirely in the browser:
 quizzes and attempts are stored in localStorage, with no backend.
 
-The quiz is being moved over from a prototype in small slices (see
-[ADR-003](docs/adr/ADR-003-pivot-to-quiz-simulator.md)). Until that is done,
-the original blog still lives at `/blog` and a preview of every question type
-is at `/quiz`.
+Open the site to create a mock test: pick the options, copy the generated
+prompt into an AI chat together with your notes, and paste the JSON it returns.
+Quizzes run with a real-time timer, are saved in the browser and keep a history
+of attempts. The original blog still lives at `/blog` until it is removed
+([ADR-003](docs/adr/ADR-003-pivot-to-quiz-simulator.md)).
 
 ## Stack
 

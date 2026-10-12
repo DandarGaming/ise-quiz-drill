@@ -3,6 +3,7 @@ import {
   QUESTION_TYPES,
   type AntiCheatOptions,
   type Question,
+  type QuizAttemptRecord,
   type QuizConfig,
   type TemplateMode,
 } from '../types/quiz';
@@ -78,28 +79,74 @@ const questionSchema = z
     }
   });
 
-const quizSchema = z
-  .object({
-    id: z.string().nullish(),
-    title: z.string().trim().min(1, 'Add a quiz title.'),
-    courseCode: z.string().nullish(),
-    description: z.string().nullish(),
-    questions: z.array(questionSchema).min(1, 'Add at least one question.'),
-  })
-  .superRefine((quiz, ctx) => {
-    const seen = new Set<string>();
-    quiz.questions.forEach((q, index) => {
-      const id = q.id?.trim() || `q${index + 1}`;
-      if (seen.has(id)) {
-        ctx.addIssue({
-          code: 'custom',
-          path: ['questions', index],
-          message: `id "${id}" is already used by another question.`,
-        });
-      }
-      seen.add(id);
-    });
+const quizFields = {
+  id: z.string().nullish(),
+  title: z.string().trim().min(1, 'Add a quiz title.'),
+  courseCode: z.string().nullish(),
+  description: z.string().nullish(),
+  questions: z.array(questionSchema).min(1, 'Add at least one question.'),
+};
+
+function uniqueQuestionIds(
+  quiz: { questions: { id?: string | null }[] },
+  ctx: z.RefinementCtx,
+) {
+  const seen = new Set<string>();
+  quiz.questions.forEach((q, index) => {
+    const id = q.id?.trim() || `q${index + 1}`;
+    if (seen.has(id)) {
+      ctx.addIssue({
+        code: 'custom',
+        path: ['questions', index],
+        message: `id "${id}" is already used by another question.`,
+      });
+    }
+    seen.add(id);
   });
+}
+
+// What an AI returns: settings like the time limit come from the creator
+const quizSchema = z.object(quizFields).superRefine(uniqueQuestionIds);
+
+// A quiz as saved in the browser, with every setting filled in
+const storedQuizSchema = z
+  .object({
+    ...quizFields,
+    id: z.string().min(1),
+    templateMode: z.enum(['paginated', 'single-page']),
+    timeLimitMinutes: z.number().positive(),
+    questionsPerPage: z.number().int().positive(),
+    antiCheat: z
+      .object({
+        enabled: z.boolean(),
+        tabLock: z.boolean(),
+        uiRestrictions: z.boolean(),
+        fullscreenLock: z.boolean(),
+      })
+      .optional(),
+  })
+  .superRefine(uniqueQuestionIds);
+
+const attemptRecordSchema = z.object({
+  id: z.string().min(1),
+  quizId: z.string(),
+  quizTitle: z.string(),
+  courseCode: z.string(),
+  timestamp: z.string(),
+  earnedScore: z.number(),
+  totalPoints: z.number(),
+  percentage: z.number(),
+  timeTakenSeconds: z.number(),
+  eventLog: z.array(z.object({ type: z.string(), timestamp: z.string() })),
+  answers: z.record(z.string(), z.union([z.string(), z.array(z.string())])),
+  quizSnapshot: storedQuizSchema,
+});
+
+export const isStoredQuiz = (value: unknown): value is QuizConfig =>
+  storedQuizSchema.safeParse(value).success;
+
+export const isAttemptRecord = (value: unknown): value is QuizAttemptRecord =>
+  attemptRecordSchema.safeParse(value).success;
 
 // Choices made in the creator, which win over what the AI wrote
 export interface ImportSettings {

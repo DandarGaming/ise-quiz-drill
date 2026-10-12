@@ -74,7 +74,7 @@ export function ResultsReview({
               onClick={onExit}
               className="rounded-lg bg-[#006fbf] px-4 py-2 text-sm font-bold text-white hover:bg-[#005694]"
             >
-              Back to creator
+              Back to library
             </button>
           )}
         </div>

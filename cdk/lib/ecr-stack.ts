@@ -6,7 +6,7 @@ export class EcrStack extends cdk.Stack {
     super(scope, id, props);
 
     const repository = new ecr.Repository(this, 'AppRepository', {
-      repositoryName: 'astro-blog',
+      repositoryName: 'ise-quiz-drill',
       imageScanOnPush: true,
       removalPolicy: cdk.RemovalPolicy.RETAIN,
     });

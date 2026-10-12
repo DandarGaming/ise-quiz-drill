@@ -179,7 +179,6 @@ const stripFence = (text: string) =>
     .replace(/^```(?:json)?\s*/i, '')
     .replace(/\s*```$/, '');
 
-// Keys with a null or undefined value are left out of the question
 const compact = <T extends object>(value: T) =>
   Object.fromEntries(
     Object.entries(value).filter(([, v]) => v !== null && v !== undefined),

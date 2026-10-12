@@ -17,13 +17,16 @@ import {
 } from '../../utils/attemptStorage';
 import { gradeQuiz } from '../../utils/grading';
 import { paginate } from '../../utils/pagination';
+import {
+  browserStorage,
+  safely,
+  type KeyValueStore,
+} from '../../utils/browserStorage';
 import { HeaderBar } from './HeaderBar';
 import { QuestionNavigator } from './QuestionNavigator';
 import { QuestionRenderer } from './QuestionRenderer';
 import { ResultsReview } from './ResultsReview';
 import { SubmitModal } from './SubmitModal';
-
-type KeyValueStore = Pick<Storage, 'getItem' | 'setItem' | 'removeItem'>;
 
 export interface QuizSimulatorProps {
   quiz: QuizConfig;
@@ -49,19 +52,6 @@ function newAttempt(quiz: QuizConfig): AttemptState {
     eventLog: [],
   };
 }
-
-// Storage can be missing (server render) or throw (private mode, full
-// quota); the quiz must keep working without it.
-function safely<T>(action: () => T): T | undefined {
-  try {
-    return action();
-  } catch {
-    return undefined;
-  }
-}
-
-const browserStorage = (): KeyValueStore | undefined =>
-  typeof window === 'undefined' ? undefined : safely(() => window.localStorage);
 
 function PageControls({
   page,

@@ -13,7 +13,7 @@ export interface QuestionRendererProps {
 
 const BLANK = '[BLANK]';
 
-function CodeSnippet({ code }: { code: string }) {
+export function CodeSnippet({ code }: { code: string }) {
   const lines = code.split('\n');
   return (
     <figure

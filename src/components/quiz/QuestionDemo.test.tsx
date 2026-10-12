@@ -48,6 +48,12 @@ describe('QuestionDemo', () => {
         name: 'Submit Quiz',
       }),
     );
-    expect(screen.getByRole('status')).toHaveTextContent('Submitted');
+    expect(screen.getByRole('region', { name: 'Summary' })).toHaveTextContent(
+      '0 / 7 (0%)',
+    );
+
+    await userEvent.click(screen.getByRole('button', { name: 'Retake quiz' }));
+    expect(screen.queryByRole('region', { name: 'Summary' })).toBeNull();
+    expect(screen.getByRole('timer')).toBeInTheDocument();
   });
 });

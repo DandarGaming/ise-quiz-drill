@@ -7,8 +7,9 @@ quizzes and attempts are stored in localStorage, with no backend.
 Open the site to create a mock test: pick the options, copy the generated
 prompt into an AI chat together with your notes, and paste the JSON it returns.
 Quizzes run with a real-time timer, are saved in the browser and keep a history
-of attempts. The original blog still lives at `/blog` until it is removed
-([ADR-003](docs/adr/ADR-003-pivot-to-quiz-simulator.md)).
+of attempts.
+See [ADR-003](docs/adr/ADR-003-pivot-to-quiz-simulator.md) for why it replaced
+the original blog.
 
 ## Stack
 

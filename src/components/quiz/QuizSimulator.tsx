@@ -223,9 +223,7 @@ export const QuizSimulator: React.FC<QuizSimulatorProps> = ({
   };
 
   const handleExit = () => {
-    if (
-      !window.confirm('Leave the quiz? Your progress is saved automatically.')
-    ) {
+    if (!window.confirm('Leave the quiz? Your answers will not be kept.')) {
       return;
     }
     if (onExit) onExit();

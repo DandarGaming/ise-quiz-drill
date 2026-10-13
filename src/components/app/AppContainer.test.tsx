@@ -3,7 +3,7 @@ import { afterEach, beforeEach, describe, it, expect, vi } from 'vitest';
 import { fireEvent, render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { AppContainer } from './AppContainer';
-import { loadSavedQuizzes } from '../../utils/attemptStorage';
+import { loadSavedQuizzes, saveAttempt } from '../../utils/attemptStorage';
 import { sampleQuiz } from '../../data/sampleQuiz';
 
 beforeEach(() => localStorage.clear());
@@ -88,5 +88,42 @@ describe('AppContainer', () => {
     await userEvent.click(screen.getByRole('button', { name: 'Start Quiz' }));
 
     expect(screen.getByRole('timer')).toBeInTheDocument();
+  });
+
+  it('starts a quiz from the library with a fresh attempt, not the last run', async () => {
+    vi.spyOn(window, 'confirm').mockReturnValue(true);
+    render(<AppContainer />);
+    await startImportedQuiz();
+    await userEvent.click(screen.getAllByRole('radio')[0]);
+    expect(screen.getByText('1 of 5 questions saved')).toBeInTheDocument();
+    await userEvent.click(screen.getByRole('button', { name: 'Exit quiz' }));
+
+    await userEvent.click(
+      within(mainNav()).getByRole('button', { name: /Saved Library/ }),
+    );
+    await userEvent.click(screen.getByRole('button', { name: 'Start Quiz' }));
+
+    expect(screen.getByText('0 of 5 questions saved')).toBeInTheDocument();
+  });
+
+  it('starts a retake from scratch even if an old attempt was left behind', async () => {
+    render(<AppContainer />);
+    await startImportedQuiz();
+    await finishQuiz();
+    saveAttempt(localStorage, {
+      quizId: sampleQuiz.id,
+      startedAt: new Date().toISOString(),
+      deadline: Date.now() + 600_000,
+      currentPage: 3,
+      answers: { q1: 'a' },
+      flagged: {},
+      eventLog: [],
+    });
+
+    await userEvent.click(
+      screen.getAllByRole('button', { name: 'Retake Quiz' })[0],
+    );
+
+    expect(screen.getByText('0 of 5 questions saved')).toBeInTheDocument();
   });
 });

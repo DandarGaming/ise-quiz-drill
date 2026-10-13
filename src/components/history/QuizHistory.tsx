@@ -56,10 +56,10 @@ function exportJson(quiz: QuizConfig) {
 }
 
 const tabClass = (active: boolean) =>
-  `px-4 py-2 rounded-lg font-bold text-xs transition-all flex items-center gap-2 cursor-pointer ${
+  `px-4 py-2 rounded-lg font-bold text-xs transition-colors flex items-center gap-2 cursor-pointer border border-[#006fbf] ${
     active
-      ? 'bg-[#006fbf] text-white shadow-xs'
-      : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+      ? 'bg-[#006fbf] text-white'
+      : 'bg-white text-[#006fbf] hover:bg-[#006fbf] hover:text-white'
   }`;
 
 export const QuizHistory: React.FC<QuizHistoryProps> = ({

@@ -90,4 +90,20 @@ describe('AppContainer', () => {
 
     expect(screen.getByRole('timer')).toBeInTheDocument();
   });
+
+  it('starts a quiz from the library with a fresh attempt, not the last run', async () => {
+    vi.spyOn(window, 'confirm').mockReturnValue(true);
+    render(<AppContainer />);
+    await startImportedQuiz();
+    await userEvent.click(screen.getAllByRole('radio')[0]);
+    expect(screen.getByText('1 of 5 questions saved')).toBeInTheDocument();
+    await userEvent.click(screen.getByRole('button', { name: 'Exit quiz' }));
+
+    await userEvent.click(
+      within(mainNav()).getByRole('button', { name: /Saved Library/ }),
+    );
+    await userEvent.click(screen.getByRole('button', { name: 'Start Quiz' }));
+
+    expect(screen.getByText('0 of 5 questions saved')).toBeInTheDocument();
+  });
 });

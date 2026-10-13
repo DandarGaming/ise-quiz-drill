@@ -1,4 +1,4 @@
-# Brightspace Quiz Simulator
+# ISE QUIZ DRILL
 
 A practice tool that recreates the Brightspace quiz interface, so students can
 take mock tests built from their own notes. It runs entirely in the browser:

@@ -30,23 +30,24 @@ const last = (fn: ReturnType<typeof vi.fn>) =>
   fn.mock.lastCall?.[0] as PromptOptions;
 
 describe('PromptOptionsForm', () => {
-  it('edits the title, question count and time limit through labelled fields', async () => {
+  it('edits the question count through a labelled field', async () => {
     const onChange = vi.fn();
     render(<Harness onChange={onChange} />);
 
-    await userEvent.type(
-      screen.getByLabelText('Test Title (Optional)'),
-      'Midterm',
-    );
     const count = screen.getByLabelText('Number of Questions');
     await userEvent.clear(count);
     await userEvent.type(count, '20');
 
-    expect(last(onChange)).toMatchObject({
-      title: 'Midterm',
-      questionCount: 20,
-    });
-    expect(screen.getByLabelText('Time Limit (Minutes)')).toHaveValue(15);
+    expect(last(onChange)).toMatchObject({ questionCount: 20 });
+  });
+
+  it('leaves the test settings to the test configuration', () => {
+    render(<Harness />);
+
+    expect(screen.queryByLabelText(/Test Title/)).toBeNull();
+    expect(screen.queryByLabelText(/Time Limit/)).toBeNull();
+    expect(screen.queryByText('Test Layout Mode')).toBeNull();
+    expect(screen.queryByText(/Anti-Cheat/i)).toBeNull();
   });
 
   it('picks the difficulty with toggle buttons and shows the mix for custom', async () => {
@@ -82,15 +83,30 @@ describe('PromptOptionsForm', () => {
     expect(screen.getByText(/Current sum:/)).toHaveTextContent('90%');
   });
 
-  it('switches the layout mode', async () => {
+  it('lets the custom percentages be cleared completely while typing', async () => {
     const onChange = vi.fn();
     render(<Harness onChange={onChange} />);
-
     await userEvent.click(
-      screen.getByRole('button', { name: 'Scroll Form (All Questions)' }),
+      screen.getByRole('button', { name: 'Custom % Breakdown' }),
     );
 
-    expect(last(onChange).templateMode).toBe('single-page');
+    const easy = screen.getByLabelText('Easy %');
+    await userEvent.clear(easy);
+
+    expect(easy).toHaveValue(null);
+    expect(last(onChange).mix.easy).toBe(0);
+
+    await userEvent.type(easy, '25');
+    expect(easy).toHaveValue(25);
+    expect(last(onChange).mix.easy).toBe(25);
+  });
+
+  it('shows no example text in the input fields', () => {
+    render(<Harness />);
+
+    for (const field of screen.getAllByRole('textbox')) {
+      expect(field).not.toHaveAttribute('placeholder');
+    }
   });
 
   it('toggles question types and warns when none is left', async () => {
@@ -132,22 +148,5 @@ describe('PromptOptionsForm', () => {
     expect(last(onChange).notes).toBe(
       'Structure questions around real-world application scenarios and architectural design problems.\nFocus on tricky edge cases, subtle traps, and common student misunderstandings.',
     );
-  });
-
-  it('shows the proctoring options once anti-cheat is enabled', async () => {
-    const onChange = vi.fn();
-    render(<Harness onChange={onChange} />);
-    expect(
-      screen.queryByRole('checkbox', { name: 'Tab & Focus Lock' }),
-    ).toBeNull();
-
-    await userEvent.click(
-      screen.getByRole('checkbox', { name: 'Enable Anti-Cheat' }),
-    );
-
-    expect(last(onChange).antiCheat.enabled).toBe(true);
-    expect(
-      screen.getByRole('checkbox', { name: 'Require Fullscreen' }),
-    ).toBeChecked();
   });
 });

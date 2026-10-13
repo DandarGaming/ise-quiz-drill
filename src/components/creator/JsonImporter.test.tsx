@@ -30,6 +30,25 @@ describe('JsonImporter', () => {
     expect(screen.queryByRole('alert')).toBeNull();
   });
 
+  it('keeps Start locked and says why while the test configuration is incomplete', () => {
+    const onStart = vi.fn();
+    render(
+      <JsonImporter
+        settings={settings}
+        onStart={onStart}
+        blockedReason="Title required"
+      />,
+    );
+
+    paste(JSON.stringify(sampleQuiz));
+
+    expect(
+      screen.getByRole('button', { name: 'Start Quiz Simulation Now' }),
+    ).toBeDisabled();
+    expect(screen.getByText('Title required')).toBeInTheDocument();
+    expect(onStart).not.toHaveBeenCalled();
+  });
+
   it('summarises a valid quiz and starts it with the creator settings', async () => {
     const onStart = vi.fn();
     render(<JsonImporter settings={settings} onStart={onStart} />);

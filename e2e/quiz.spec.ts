@@ -96,3 +96,31 @@ test('serves a health check for the container', async ({ request }) => {
 
   expect(response.ok()).toBe(true);
 });
+
+test('keeps the quiz visible when answering a lower question in scroll mode', async ({
+  page,
+}) => {
+  const long = JSON.parse(quizJson);
+  long.questions = Array.from({ length: 12 }, (_, i) => ({
+    ...long.questions[0],
+    id: `q${i + 1}`,
+    number: i + 1,
+    prompt: `Question text ${i + 1}?`,
+  }));
+  await page.goto('/');
+  await page
+    .getByRole('button', { name: 'Scroll Form (All Questions)' })
+    .click();
+  await page.getByLabel(/Test Title/).fill('Scroll quiz');
+  await page.getByLabel('Quiz JSON').fill(JSON.stringify(long));
+  await page.getByRole('button', { name: 'Start Quiz Simulation Now' }).click();
+
+  const question = page.getByRole('group', { name: 'Question 8' });
+  await question.scrollIntoViewIfNeeded();
+  await question.getByText('git branch', { exact: true }).click();
+
+  await expect(page.getByRole('timer')).toBeInViewport();
+  await expect(
+    question.getByText('git branch', { exact: true }),
+  ).toBeInViewport();
+});

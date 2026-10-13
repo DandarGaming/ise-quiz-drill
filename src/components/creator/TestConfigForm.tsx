@@ -128,17 +128,17 @@ export const TestConfigForm: React.FC<TestConfigFormProps> = ({
         </div>
 
         {ac.enabled && (
-          <div className="bg-red-50 border border-red-200 p-4 rounded-lg space-y-3 animate-in fade-in">
+          <div className="border border-gray-300 p-4 rounded-lg space-y-3">
             <div className="flex items-start gap-3">
               <AlertTriangle
                 aria-hidden="true"
-                className="w-5 h-5 text-red-600 mt-0.5"
+                className="w-5 h-5 text-gray-600 mt-0.5"
               />
               <div>
-                <h3 className="text-sm font-bold text-red-900">
+                <h3 className="text-sm font-bold text-gray-900">
                   Proctoring Mode Active
                 </h3>
-                <p className="text-xs text-red-700 mt-0.5 font-medium">
+                <p className="text-xs text-gray-600 mt-0.5 font-medium">
                   When enabled, violations will be automatically logged to the
                   Audit Trail.
                 </p>
@@ -157,7 +157,7 @@ export const TestConfigForm: React.FC<TestConfigFormProps> = ({
                     type="checkbox"
                     checked={ac[key]}
                     onChange={(e) => setAc(key, e.target.checked)}
-                    className="w-4 h-4 rounded text-red-600 focus:ring-red-500 cursor-pointer"
+                    className="w-4 h-4 rounded text-[#006fbf] cursor-pointer"
                   />
                   {text}
                 </label>

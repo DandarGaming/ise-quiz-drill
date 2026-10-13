@@ -83,6 +83,32 @@ describe('PromptOptionsForm', () => {
     expect(screen.getByText(/Current sum:/)).toHaveTextContent('90%');
   });
 
+  it('lets the custom percentages be cleared completely while typing', async () => {
+    const onChange = vi.fn();
+    render(<Harness onChange={onChange} />);
+    await userEvent.click(
+      screen.getByRole('button', { name: 'Custom % Breakdown' }),
+    );
+
+    const easy = screen.getByLabelText('Easy %');
+    await userEvent.clear(easy);
+
+    expect(easy).toHaveValue(null);
+    expect(last(onChange).mix.easy).toBe(0);
+
+    await userEvent.type(easy, '25');
+    expect(easy).toHaveValue(25);
+    expect(last(onChange).mix.easy).toBe(25);
+  });
+
+  it('shows no example text in the input fields', () => {
+    render(<Harness />);
+
+    for (const field of screen.getAllByRole('textbox')) {
+      expect(field).not.toHaveAttribute('placeholder');
+    }
+  });
+
   it('toggles question types and warns when none is left', async () => {
     const onChange = vi.fn();
     render(<Harness onChange={onChange} />);

@@ -76,8 +76,16 @@ export const PromptOptionsForm: React.FC<PromptOptionsFormProps> = ({
       ),
     );
 
-  const setMix = (level: keyof PromptOptions['mix'], text: string) =>
+  // The typed text is kept apart from the number, so a field can be emptied
+  const [mixText, setMixText] = useState(() => ({
+    easy: String(value.mix.easy),
+    medium: String(value.mix.medium),
+    hard: String(value.mix.hard),
+  }));
+  const setMix = (level: keyof PromptOptions['mix'], text: string) => {
+    setMixText((prev) => ({ ...prev, [level]: text }));
     set('mix', { ...value.mix, [level]: toNumber(text, 100) });
+  };
 
   return (
     <form
@@ -133,14 +141,14 @@ export const PromptOptionsForm: React.FC<PromptOptionsFormProps> = ({
 
         {value.difficulty === 'custom' && (
           <div className="space-y-3 pt-1">
-            <div className="bg-blue-50/70 border border-blue-200 rounded-lg p-4 grid grid-cols-3 gap-4 animate-in fade-in">
+            <div className="border border-gray-200 rounded-lg p-4 grid grid-cols-3 gap-4">
               {(
                 [
-                  ['easy', 'Easy %', 'e.g. 30'],
-                  ['medium', 'Medium %', 'e.g. 50'],
-                  ['hard', 'Hard %', 'e.g. 20'],
+                  ['easy', 'Easy %'],
+                  ['medium', 'Medium %'],
+                  ['hard', 'Hard %'],
                 ] as const
-              ).map(([level, text, hint]) => (
+              ).map(([level, text]) => (
                 <div key={level}>
                   <label
                     htmlFor={`prompt-mix-${level}`}
@@ -153,7 +161,7 @@ export const PromptOptionsForm: React.FC<PromptOptionsFormProps> = ({
                     type="number"
                     min={0}
                     max={100}
-                    value={value.mix[level]}
+                    value={mixText[level]}
                     onChange={(e) => setMix(level, e.target.value)}
                     onFocus={() => setIsPctFocused(true)}
                     onBlur={() => setIsPctFocused(false)}
@@ -161,7 +169,6 @@ export const PromptOptionsForm: React.FC<PromptOptionsFormProps> = ({
                     aria-describedby={
                       isPctInvalid ? 'prompt-mix-error' : undefined
                     }
-                    placeholder={hint}
                     className={pctInput}
                   />
                 </div>
@@ -170,10 +177,10 @@ export const PromptOptionsForm: React.FC<PromptOptionsFormProps> = ({
 
             {/* Hidden while typing in a field, so it does not flash on every key */}
             {isPctInvalid && !isPctFocused && (
-              <div className="bg-amber-50 border border-amber-300 text-amber-900 px-4 py-2.5 rounded-lg flex items-center gap-2.5 text-xs font-semibold animate-in fade-in">
+              <div className="flex items-center gap-2 text-xs font-semibold text-red-700">
                 <AlertTriangle
                   aria-hidden="true"
-                  className="w-4 h-4 text-amber-600 flex-shrink-0"
+                  className="w-4 h-4 text-red-600 flex-shrink-0"
                 />
                 <span>
                   Warning: Total difficulty percentage must equal exactly 100%
@@ -200,7 +207,6 @@ export const PromptOptionsForm: React.FC<PromptOptionsFormProps> = ({
           type="text"
           value={value.topics}
           onChange={(e) => set('topics', e.target.value)}
-          placeholder="e.g., Servlets LifeCycle, JSP Implicit Objects, MVC Architecture, Session Cookie..."
           className={textInput}
         />
       </div>
@@ -224,10 +230,10 @@ export const PromptOptionsForm: React.FC<PromptOptionsFormProps> = ({
         </div>
 
         {isNoTypeSelected && (
-          <div className="bg-amber-50 border border-amber-300 text-amber-900 px-4 py-2.5 rounded-lg flex items-center gap-2.5 text-xs font-semibold animate-in fade-in mt-2">
+          <div className="flex items-center gap-2 text-xs font-semibold text-red-700 mt-2">
             <AlertTriangle
               aria-hidden="true"
-              className="w-4 h-4 text-amber-600 flex-shrink-0"
+              className="w-4 h-4 text-red-600 flex-shrink-0"
             />
             <span>
               Warning: You must select at least one question type for the exam.
@@ -244,7 +250,6 @@ export const PromptOptionsForm: React.FC<PromptOptionsFormProps> = ({
           id="prompt-notes"
           value={value.notes}
           onChange={(e) => set('notes', e.target.value)}
-          placeholder="e.g., Include code snippets for at least 2 questions. Focus on subtle edge cases and tricky traps..."
           rows={2.5}
           className="w-full px-3.5 py-2 border border-gray-300 rounded-lg text-xs focus:ring-2 focus:ring-[#006fbf] focus:border-transparent outline-none text-gray-900 font-medium"
         />
@@ -265,7 +270,7 @@ export const PromptOptionsForm: React.FC<PromptOptionsFormProps> = ({
                     : chip.text,
                 )
               }
-              className="bg-blue-50 hover:bg-blue-100 text-[#006fbf] border border-blue-200 px-2.5 py-1 rounded-md text-xs font-bold transition-all cursor-pointer hover:shadow-2xs active:scale-95"
+              className="bg-white hover:bg-gray-50 text-gray-700 border border-gray-300 px-2.5 py-1 rounded-md text-xs font-bold transition-colors cursor-pointer"
             >
               {chip.label}
             </button>

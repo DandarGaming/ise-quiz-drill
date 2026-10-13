@@ -18,6 +18,7 @@ describe('CompiledPromptBox', () => {
     const update = screen.getByRole('button', { name: 'Update Prompt' });
     expect(update).toBeEnabled();
     expect(update).toHaveAttribute('data-highlight', 'true');
+    expect(update).not.toHaveClass('animate-pulse');
     expect(screen.getByRole('button', { name: 'Copy Locked' })).toBeDisabled();
     expect(screen.getByRole('status')).toHaveTextContent('No prompt yet');
   });

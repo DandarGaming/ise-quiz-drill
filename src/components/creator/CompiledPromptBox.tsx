@@ -75,7 +75,7 @@ export const CompiledPromptBox: React.FC<CompiledPromptBoxProps> = ({
                 ? 'bg-slate-700 text-slate-400 opacity-50 cursor-not-allowed'
                 : isUpToDate
                   ? 'bg-slate-700 text-slate-300 cursor-default'
-                  : 'bg-amber-600 hover:bg-amber-700 text-white ring-4 ring-amber-500/30 animate-pulse cursor-pointer'
+                  : 'bg-white hover:bg-slate-100 text-slate-900 cursor-pointer'
             }`}
           >
             {isUpToDate ? (
@@ -126,12 +126,9 @@ export const CompiledPromptBox: React.FC<CompiledPromptBoxProps> = ({
       {error && (
         <p
           role="alert"
-          className="bg-amber-500/15 border border-amber-500/40 text-amber-200 px-4 py-2.5 rounded-lg flex items-center gap-2.5 text-xs font-semibold"
+          className="flex items-center gap-2 text-xs font-semibold text-amber-300"
         >
-          <AlertTriangle
-            aria-hidden="true"
-            className="w-4 h-4 text-amber-400 flex-shrink-0"
-          />
+          <AlertTriangle aria-hidden="true" className="w-4 h-4 flex-shrink-0" />
           {error}
         </p>
       )}

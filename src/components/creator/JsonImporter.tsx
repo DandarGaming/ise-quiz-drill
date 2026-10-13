@@ -70,7 +70,7 @@ export const JsonImporter: React.FC<JsonImporterProps> = ({
         onDrop={handleDrop}
         className={`border-2 border-dashed rounded-xl p-6 text-center transition-all ${
           isDragOver
-            ? 'border-[#006fbf] bg-blue-50/50'
+            ? 'border-[#006fbf] bg-gray-50'
             : 'border-gray-300 hover:border-gray-400 bg-gray-50/50'
         }`}
       >
@@ -113,7 +113,7 @@ export const JsonImporter: React.FC<JsonImporterProps> = ({
       {validationError && (
         <div
           role="alert"
-          className="bg-red-50 border border-red-200 text-red-800 p-5 rounded-xl space-y-3 animate-in fade-in shadow-sm"
+          className="bg-white border border-red-300 text-red-800 p-5 rounded-xl space-y-3"
         >
           <div className="flex items-start justify-between gap-4">
             <div className="flex items-start gap-3">
@@ -127,7 +127,7 @@ export const JsonImporter: React.FC<JsonImporterProps> = ({
                 </p>
                 <p
                   id="json-import-error"
-                  className="text-xs font-mono bg-red-100/80 border border-red-200 p-2 rounded mt-1.5 text-red-950"
+                  className="text-xs font-mono bg-gray-50 border border-gray-200 p-2 rounded mt-1.5 text-gray-900"
                 >
                   {validationError}
                 </p>
@@ -156,7 +156,7 @@ export const JsonImporter: React.FC<JsonImporterProps> = ({
             </button>
           </div>
 
-          <div className="bg-white/80 border border-red-200 rounded-lg p-3 text-xs text-gray-700 flex items-center gap-2">
+          <div className="bg-white border border-gray-200 rounded-lg p-3 text-xs text-gray-700 flex items-center gap-2">
             <Info
               aria-hidden="true"
               className="w-4 h-4 text-[#006fbf] flex-shrink-0"
@@ -174,7 +174,7 @@ export const JsonImporter: React.FC<JsonImporterProps> = ({
       {parsedQuiz && (
         <div
           role="status"
-          className="bg-green-50 border border-green-200 text-green-800 px-5 py-4 rounded-xl flex items-center justify-between animate-in fade-in shadow-sm"
+          className="bg-white border border-gray-300 text-gray-900 px-5 py-4 rounded-xl flex items-center justify-between"
         >
           <div className="space-y-1">
             <div className="flex items-center gap-2">
@@ -185,7 +185,7 @@ export const JsonImporter: React.FC<JsonImporterProps> = ({
               <span className="font-bold text-base text-gray-900">
                 {parsedQuiz.title}
               </span>
-              <span className="bg-green-200 text-green-900 text-xs px-2 py-0.5 rounded font-semibold">
+              <span className="bg-gray-100 text-gray-800 text-xs px-2 py-0.5 rounded font-semibold">
                 {parsedQuiz.courseCode}
               </span>
             </div>

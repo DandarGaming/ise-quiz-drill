@@ -49,6 +49,20 @@ describe('QuizHistory', () => {
     expect(h.onCreate).toHaveBeenCalledOnce();
   });
 
+  it('draws the tabs in the brand colour, solid when selected', () => {
+    saveQuiz(localStorage, sampleQuiz);
+    appendHistory(localStorage, record);
+    render(<QuizHistory {...handlers()} />);
+
+    expect(screen.getByRole('tab', { name: 'Saved Tests (1)' })).toHaveClass(
+      'bg-[#006fbf]',
+      'text-white',
+    );
+    expect(
+      screen.getByRole('tab', { name: 'Attempt History (1)' }),
+    ).toHaveClass('text-[#006fbf]', 'border-[#006fbf]');
+  });
+
   it('switches between the two tabs with the mouse and the arrow keys', async () => {
     saveQuiz(localStorage, sampleQuiz);
     appendHistory(localStorage, record);

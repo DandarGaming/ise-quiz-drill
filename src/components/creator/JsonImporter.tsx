@@ -6,6 +6,8 @@ import { parseQuizJson, type ImportSettings } from '../../utils/quizSchema';
 export interface JsonImporterProps {
   settings: ImportSettings;
   onStart: (quiz: QuizConfig) => void;
+  // Why the quiz cannot start yet, for example a missing title
+  blockedReason?: string | null;
 }
 
 const fixRequest = (error: string) =>
@@ -14,6 +16,7 @@ const fixRequest = (error: string) =>
 export const JsonImporter: React.FC<JsonImporterProps> = ({
   settings,
   onStart,
+  blockedReason = null,
 }) => {
   const [jsonInput, setJsonInput] = useState('');
   const [isDragOver, setIsDragOver] = useState(false);
@@ -54,17 +57,9 @@ export const JsonImporter: React.FC<JsonImporterProps> = ({
 
   return (
     <section aria-labelledby="json-importer-title" className="space-y-4">
-      <div className="flex items-center gap-2">
-        <span className="bg-[#006fbf] text-white px-2.5 py-1 rounded text-xs font-bold uppercase tracking-wider">
-          Step 3
-        </span>
-        <h2
-          id="json-importer-title"
-          className="text-xl font-bold text-gray-900"
-        >
-          Paste JSON Payload or Drag & Drop File
-        </h2>
-      </div>
+      <h3 id="json-importer-title" className="text-xl font-bold text-gray-900">
+        Paste JSON Payload or Drag & Drop File
+      </h3>
 
       <div
         onDragOver={(e) => {
@@ -75,7 +70,7 @@ export const JsonImporter: React.FC<JsonImporterProps> = ({
         onDrop={handleDrop}
         className={`border-2 border-dashed rounded-xl p-6 text-center transition-all ${
           isDragOver
-            ? 'border-[#006fbf] bg-blue-50/50'
+            ? 'border-[#006fbf] bg-gray-50'
             : 'border-gray-300 hover:border-gray-400 bg-gray-50/50'
         }`}
       >
@@ -118,7 +113,7 @@ export const JsonImporter: React.FC<JsonImporterProps> = ({
       {validationError && (
         <div
           role="alert"
-          className="bg-red-50 border border-red-200 text-red-800 p-5 rounded-xl space-y-3 animate-in fade-in shadow-sm"
+          className="bg-white border border-red-300 text-red-800 p-5 rounded-xl space-y-3"
         >
           <div className="flex items-start justify-between gap-4">
             <div className="flex items-start gap-3">
@@ -132,7 +127,7 @@ export const JsonImporter: React.FC<JsonImporterProps> = ({
                 </p>
                 <p
                   id="json-import-error"
-                  className="text-xs font-mono bg-red-100/80 border border-red-200 p-2 rounded mt-1.5 text-red-950"
+                  className="text-xs font-mono bg-gray-50 border border-gray-200 p-2 rounded mt-1.5 text-gray-900"
                 >
                   {validationError}
                 </p>
@@ -161,7 +156,7 @@ export const JsonImporter: React.FC<JsonImporterProps> = ({
             </button>
           </div>
 
-          <div className="bg-white/80 border border-red-200 rounded-lg p-3 text-xs text-gray-700 flex items-center gap-2">
+          <div className="bg-white border border-gray-200 rounded-lg p-3 text-xs text-gray-700 flex items-center gap-2">
             <Info
               aria-hidden="true"
               className="w-4 h-4 text-[#006fbf] flex-shrink-0"
@@ -179,7 +174,7 @@ export const JsonImporter: React.FC<JsonImporterProps> = ({
       {parsedQuiz && (
         <div
           role="status"
-          className="bg-green-50 border border-green-200 text-green-800 px-5 py-4 rounded-xl flex items-center justify-between animate-in fade-in shadow-sm"
+          className="bg-white border border-gray-300 text-gray-900 px-5 py-4 rounded-xl flex items-center justify-between"
         >
           <div className="space-y-1">
             <div className="flex items-center gap-2">
@@ -190,7 +185,7 @@ export const JsonImporter: React.FC<JsonImporterProps> = ({
               <span className="font-bold text-base text-gray-900">
                 {parsedQuiz.title}
               </span>
-              <span className="bg-green-200 text-green-900 text-xs px-2 py-0.5 rounded font-semibold">
+              <span className="bg-gray-100 text-gray-800 text-xs px-2 py-0.5 rounded font-semibold">
                 {parsedQuiz.courseCode}
               </span>
             </div>
@@ -210,14 +205,26 @@ export const JsonImporter: React.FC<JsonImporterProps> = ({
             </p>
           </div>
 
-          <button
-            type="button"
-            onClick={() => onStart(parsedQuiz)}
-            className="px-8 py-3 bg-[#006fbf] hover:bg-[#005694] text-white rounded-lg font-bold text-base transition-all flex items-center gap-2 shadow-md hover:shadow-lg cursor-pointer transform hover:-translate-y-0.5 active:translate-y-0"
-          >
-            <Play aria-hidden="true" className="w-5 h-5 fill-current" /> Start
-            Quiz Simulation Now
-          </button>
+          <div className="flex flex-col items-end gap-1.5">
+            <button
+              type="button"
+              onClick={() => onStart(parsedQuiz)}
+              disabled={!!blockedReason}
+              className={`px-8 py-3 rounded-lg font-bold text-base transition-all flex items-center gap-2 ${
+                blockedReason
+                  ? 'bg-gray-200 text-gray-500 cursor-not-allowed'
+                  : 'bg-[#006fbf] hover:bg-[#005694] text-white shadow-md hover:shadow-lg cursor-pointer transform hover:-translate-y-0.5 active:translate-y-0'
+              }`}
+            >
+              <Play aria-hidden="true" className="w-5 h-5 fill-current" /> Start
+              Quiz Simulation Now
+            </button>
+            {blockedReason && (
+              <span className="text-xs font-semibold text-amber-700">
+                {blockedReason}
+              </span>
+            )}
+          </div>
         </div>
       )}
     </section>

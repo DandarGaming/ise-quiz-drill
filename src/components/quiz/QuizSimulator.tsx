@@ -1,8 +1,15 @@
-import React, { useEffect, useMemo, useRef, useState } from 'react';
+import React, {
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from 'react';
 import { AlertTriangle, X } from 'lucide-react';
 import type {
   AttemptState,
   QuizAttemptRecord,
+  Question,
   QuizConfig,
   QuizEventType,
 } from '../../types/quiz';
@@ -86,6 +93,36 @@ const PageBar: React.FC<{
     </span>
   </div>
 );
+
+interface QuestionItemProps {
+  question: Question;
+  answer: Answer | undefined;
+  isFlagged: boolean;
+  onAnswerChange: (questionId: string, answer: Answer) => void;
+  onToggleFlag: (questionId: string) => void;
+}
+
+// Memoised so that answering one question in scroll mode does not render
+// the other questions (and their code blocks) again
+const QuestionItem = React.memo(function QuestionItem({
+  question,
+  answer,
+  isFlagged,
+  onAnswerChange,
+  onToggleFlag,
+}: QuestionItemProps) {
+  return (
+    <div id={`question-${question.id}`}>
+      <QuestionRenderer
+        question={question}
+        answer={answer}
+        isFlagged={isFlagged}
+        onAnswerChange={(ans) => onAnswerChange(question.id, ans)}
+        onToggleFlag={() => onToggleFlag(question.id)}
+      />
+    </div>
+  );
+});
 
 export const QuizSimulator: React.FC<QuizSimulatorProps> = ({
   quiz,
@@ -214,6 +251,24 @@ export const QuizSimulator: React.FC<QuizSimulatorProps> = ({
     else window.location.reload();
   };
 
+  // Stable references, so memoised questions are not rendered again
+  const handleAnswerChange = useCallback(
+    (questionId: string, answer: Answer) =>
+      setState((prev) => ({
+        ...prev,
+        answers: { ...prev.answers, [questionId]: answer },
+      })),
+    [],
+  );
+  const handleToggleFlag = useCallback(
+    (questionId: string) =>
+      setState((prev) => ({
+        ...prev,
+        flagged: { ...prev.flagged, [questionId]: !prev.flagged[questionId] },
+      })),
+    [],
+  );
+
   if (record) {
     return (
       <ResultsReview
@@ -241,17 +296,6 @@ export const QuizSimulator: React.FC<QuizSimulatorProps> = ({
 
   const setCurrentPage = (page: number) =>
     setState((prev) => ({ ...prev, currentPage: page }));
-  const handleAnswerChange = (questionId: string, answer: Answer) =>
-    setState((prev) => ({
-      ...prev,
-      answers: { ...prev.answers, [questionId]: answer },
-    }));
-  const handleToggleFlag = (questionId: string) =>
-    setState((prev) => ({
-      ...prev,
-      flagged: { ...prev.flagged, [questionId]: !prev.flagged[questionId] },
-    }));
-
   return (
     <div className="fixed inset-0 z-50 h-screen w-screen bg-white text-gray-900 flex flex-col items-center font-sans select-none overflow-hidden">
       {/* Full-width green accent line */}
@@ -423,17 +467,14 @@ export const QuizSimulator: React.FC<QuizSimulatorProps> = ({
 
                   <div className="space-y-6">
                     {currentQuestions.map((q) => (
-                      <div key={q.id} id={`question-${q.id}`}>
-                        <QuestionRenderer
-                          question={q}
-                          answer={state.answers[q.id]}
-                          isFlagged={!!state.flagged[q.id]}
-                          onAnswerChange={(ans) =>
-                            handleAnswerChange(q.id, ans)
-                          }
-                          onToggleFlag={() => handleToggleFlag(q.id)}
-                        />
-                      </div>
+                      <QuestionItem
+                        key={q.id}
+                        question={q}
+                        answer={state.answers[q.id]}
+                        isFlagged={!!state.flagged[q.id]}
+                        onAnswerChange={handleAnswerChange}
+                        onToggleFlag={handleToggleFlag}
+                      />
                     ))}
                   </div>
                 </div>

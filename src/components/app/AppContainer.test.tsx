@@ -11,7 +11,8 @@ afterEach(() => vi.restoreAllMocks());
 
 const mainNav = () => screen.getByRole('navigation', { name: 'Main' });
 
-async function startImportedQuiz() {
+async function startImportedQuiz(title = sampleQuiz.title) {
+  await userEvent.type(screen.getByLabelText('Test Title'), title);
   fireEvent.change(screen.getByLabelText('Quiz JSON'), {
     target: { value: JSON.stringify(sampleQuiz) },
   });

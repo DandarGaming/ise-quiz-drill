@@ -29,6 +29,13 @@ const renderNavigator = (onSelect = vi.fn()) =>
   );
 
 describe('QuestionNavigator', () => {
+  it('is separated from the quiz by a thin line', () => {
+    renderNavigator();
+    expect(screen.getByRole('navigation', { name: 'Questions' })).toHaveClass(
+      'border-r',
+    );
+  });
+
   it('groups the questions by page', () => {
     renderNavigator();
     const nav = screen.getByRole('navigation', { name: 'Questions' });

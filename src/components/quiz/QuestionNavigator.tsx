@@ -30,7 +30,7 @@ export const QuestionNavigator: React.FC<QuestionNavigatorProps> = ({
   return (
     <nav
       aria-label="Questions"
-      className="w-56 bg-white pt-6 px-4 pb-20 flex flex-col h-full overflow-hidden select-none flex-shrink-0"
+      className="w-56 bg-white pt-6 px-4 pb-20 flex flex-col h-full overflow-hidden select-none flex-shrink-0 border-r border-gray-200"
     >
       <div className="flex-1 overflow-y-auto space-y-5 pr-2 custom-scrollbar">
         {pages.map((pageNo) => (

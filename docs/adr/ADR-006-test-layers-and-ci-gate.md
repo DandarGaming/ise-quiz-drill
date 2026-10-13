@@ -21,8 +21,11 @@ parallel with CI, so a failing test did not stop a release.
 - On `main`, the static deploy and the image push call CI as a reusable
   workflow and `needs` it, so they start only when all three jobs have passed.
   Pull requests skip that step and keep their dry run.
-- Pin Playwright to 1.47.2. Newer versions refuse to install Chromium on
-  Ubuntu 20.04, which the main development machine still runs.
+- Run the end-to-end tests locally inside the official Playwright image with
+  Podman, at the same version as `@playwright/test`. Newer Playwright no
+  longer installs browsers on Ubuntu 20.04, which the main development machine
+  runs, and an older pinned version had a high severity advisory (browser
+  downloads without certificate checks). CI installs Chromium directly.
 
 ## Consequences
 
@@ -30,7 +33,7 @@ parallel with CI, so a failing test did not stop a release.
   tests catch layout problems that jsdom cannot see.
 - Negative: CI runs twice on `main`, once for each gated workflow, and the
   end-to-end job adds about two minutes.
-- Negative: the pinned Playwright must be raised by hand once that machine
-  moves to a newer Ubuntu.
+- Negative: the image tag in `test:e2e:podman` must follow `@playwright/test`
+  on every upgrade; a unit test fails when they drift apart.
 - The end-to-end layer is small on purpose: a few journeys, not every screen,
   to keep it fast and stable. Layout bugs found later get one test each.

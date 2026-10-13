@@ -50,17 +50,18 @@ npm run dev
 | Integration | `tests/integration/` | Vitest, Testing Library | The whole app in jsdom with a real localStorage: create, take, submit, history, library |
 | End to end  | `e2e/`               | Playwright, Chromium    | The same journeys in a real browser against the production build                        |
 
-Run the end-to-end tests locally:
+Run the end-to-end tests locally inside the official Playwright image, so no
+browser has to be installed on the machine:
 
 ```sh
 npm run build
-npx playwright install chromium
-npm run test:e2e
+npm run test:e2e:podman
 ```
 
-Playwright is pinned to 1.47.2 because newer versions no longer support
-Ubuntu 20.04. After a failure, `playwright-report/` and `test-results/` hold the
-report and a trace.
+On a system that Playwright supports, `npx playwright install chromium` and
+`npm run test:e2e` work too. When upgrading `@playwright/test`, change the image
+tag in `test:e2e:podman` to the same version (a test checks this). After a
+failure, `playwright-report/` and `test-results/` hold the report and a trace.
 
 ## CI and deployment
 

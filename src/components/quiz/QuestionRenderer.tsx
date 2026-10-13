@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { ArrowRight, Bookmark, RefreshCw, X } from 'lucide-react';
+import { Bookmark, RefreshCw, X } from 'lucide-react';
 import type { Question } from '../../types/quiz';
 import { isAnswered, type Answer } from '../../utils/answers';
 import { gradeQuestion } from '../../utils/grading';
@@ -434,14 +434,13 @@ export const QuestionRenderer: React.FC<QuestionRendererProps> = ({
                         <div
                           aria-hidden="true"
                           data-review-marker
-                          className="flex items-center gap-1 flex-shrink-0 w-[42px]"
+                          className="flex items-center gap-1 flex-shrink-0 w-5"
                         >
                           {correct && (
                             <span
                               className="flex items-center text-[#006fbf]"
                               title="Correct Answer"
                             >
-                              <ArrowRight className="w-5 h-5 mr-0.5" />
                               <StraightCheck className="w-5 h-5 text-[#006fbf]" />
                             </span>
                           )}

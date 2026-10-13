@@ -149,6 +149,40 @@ describe('parseQuizJson', () => {
     );
   });
 
+  // AI output often gets the answer shape wrong; each case would leave a
+  // question that can never be answered correctly
+  it('needs a single option id for MCQ and true/false', () => {
+    expect(errorOf(withQuestion({ correctAnswer: ['a'] }))).toBe(
+      'Question 1: mcq needs correctAnswer as a single option id.',
+    );
+  });
+
+  it('needs a non-empty answer for short answer', () => {
+    expect(
+      errorOf({
+        ...aiQuiz,
+        questions: [
+          { type: 'short-answer', prompt: 'Which?', correctAnswer: '  ' },
+        ],
+      }),
+    ).toBe('Question 1: short-answer needs a non-empty correctAnswer.');
+  });
+
+  it('needs [BLANK] markers in a multi-blank prompt', () => {
+    expect(
+      errorOf({
+        ...aiQuiz,
+        questions: [
+          {
+            type: 'multi-blank',
+            prompt: 'No gaps here.',
+            correctAnswer: ['x'],
+          },
+        ],
+      }),
+    ).toBe('Question 1: the prompt has no [BLANK] markers.');
+  });
+
   it('rejects two questions with the same id', () => {
     expect(
       errorOf({

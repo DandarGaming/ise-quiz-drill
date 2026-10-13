@@ -139,6 +139,24 @@ describe('QuizHistory', () => {
     expect(h.onReview).toHaveBeenCalledWith(record);
   });
 
+  it('deletes one attempt only after confirming', async () => {
+    appendHistory(localStorage, record);
+    const confirm = vi.spyOn(window, 'confirm').mockReturnValue(false);
+    render(<QuizHistory {...handlers()} />);
+    await userEvent.click(screen.getByRole('tab', { name: /Attempt History/ }));
+
+    await userEvent.click(
+      screen.getByRole('button', { name: 'Delete attempt' }),
+    );
+    expect(loadHistory(localStorage)).toHaveLength(1);
+
+    confirm.mockReturnValue(true);
+    await userEvent.click(
+      screen.getByRole('button', { name: 'Delete attempt' }),
+    );
+    expect(loadHistory(localStorage)).toEqual([]);
+  });
+
   it('clears the attempt history after confirming', async () => {
     appendHistory(localStorage, record);
     vi.spyOn(window, 'confirm').mockReturnValue(true);

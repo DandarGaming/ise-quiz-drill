@@ -93,6 +93,30 @@ describe('quiz journey', () => {
     ).toHaveTextContent('7 / 7 (100%)');
   });
 
+  it('retakes a quiz from a reviewed attempt with a fresh start and keeps the old result', async () => {
+    const user = userEvent.setup();
+    render(<AppContainer />);
+    await startQuiz(user);
+    await user.click(screen.getByRole('radio', { name: '3' }));
+    await submit(user);
+    await user.click(
+      screen.getAllByRole('button', { name: 'Back to Creator' })[0],
+    );
+    await user.click(
+      within(mainNav()).getByRole('button', { name: /Saved Library/ }),
+    );
+    await user.click(
+      screen.getByRole('tab', { name: /Attempt History \(1\)/ }),
+    );
+    await user.click(screen.getByRole('button', { name: 'Review' }));
+
+    await user.click(screen.getAllByRole('button', { name: 'Retake Quiz' })[0]);
+
+    expect(screen.getByRole('timer')).toHaveTextContent('0:15:00 remaining');
+    expect(screen.getByText('0 of 5 questions saved')).toBeInTheDocument();
+    expect(loadHistory(localStorage)).toHaveLength(1);
+  });
+
   it('scores a submission with no answers as zero', async () => {
     const user = userEvent.setup();
     render(<AppContainer />);

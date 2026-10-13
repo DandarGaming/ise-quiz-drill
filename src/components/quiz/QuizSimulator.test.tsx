@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 import { afterEach, beforeEach, describe, it, expect, vi } from 'vitest';
-import { act, fireEvent, render, screen, within } from '@testing-library/react';
+import { act, render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { QuizSimulator } from './QuizSimulator';
 import {
@@ -88,35 +88,6 @@ describe('QuizSimulator', () => {
       screen.getAllByRole('heading', { name: /^Question \d/ }),
     ).toHaveLength(3);
     expect(screen.queryByRole('button', { name: 'Next Page' })).toBeNull();
-  });
-
-  it('scrolls the quiz when the wheel is used over the question navigator', () => {
-    const scrollBy = vi.fn();
-    HTMLElement.prototype.scrollBy = scrollBy;
-    render(<QuizSimulator quiz={{ ...quiz, templateMode: 'single-page' }} />);
-
-    fireEvent.wheel(screen.getByRole('navigation', { name: 'Questions' }), {
-      deltaY: 150,
-    });
-
-    expect(scrollBy).toHaveBeenCalledWith({ top: 150 });
-  });
-
-  it('scrolls the quiz when the wheel is used anywhere outside it', () => {
-    const scrollBy = vi.fn();
-    HTMLElement.prototype.scrollBy = scrollBy;
-    const { container } = render(
-      <QuizSimulator quiz={{ ...quiz, templateMode: 'single-page' }} />,
-    );
-
-    // The white side margins around the quiz column
-    fireEvent.wheel(container.firstElementChild!, { deltaY: 90 });
-    expect(scrollBy).toHaveBeenCalledWith({ top: 90 });
-
-    // Over the quiz itself the browser scrolls, so nothing is forwarded
-    scrollBy.mockClear();
-    fireEvent.wheel(screen.getByRole('main'), { deltaY: 90 });
-    expect(scrollBy).not.toHaveBeenCalled();
   });
 
   it('saves answers and restores them after a reload', async () => {

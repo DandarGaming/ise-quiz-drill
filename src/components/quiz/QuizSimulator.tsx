@@ -112,27 +112,7 @@ export const QuizSimulator: React.FC<QuizSimulatorProps> = ({
   const [isTimerBlinking, setIsTimerBlinking] = useState(false);
   const submitted = record !== null;
   const submittedRef = useRef(false);
-  const mainRef = useRef<HTMLElement>(null);
-  const frameRef = useRef<HTMLDivElement>(null);
   const warned = useRef(new Set<number>());
-
-  // The quiz column does not fill a wide window, so the wheel over the white
-  // margins would do nothing. Pass it on to the quiz. Over the quiz the
-  // browser scrolls by itself, and the navigator handles its own wheel.
-  useEffect(() => {
-    const frame = frameRef.current;
-    if (!frame) return;
-    const onWheel = (e: WheelEvent) => {
-      const main = mainRef.current;
-      const target = e.target as Element;
-      if (!main || e.defaultPrevented || main.contains(target)) return;
-      if (target.closest('[role="dialog"]')) return;
-      e.preventDefault();
-      main.scrollBy({ top: e.deltaMode === 1 ? e.deltaY * 16 : e.deltaY });
-    };
-    frame.addEventListener('wheel', onWheel, { passive: false });
-    return () => frame.removeEventListener('wheel', onWheel);
-  }, [submitted]);
 
   const showToast = (message: string) =>
     setToastState({ message, isExiting: false });
@@ -291,10 +271,7 @@ export const QuizSimulator: React.FC<QuizSimulatorProps> = ({
     }));
 
   return (
-    <div
-      ref={frameRef}
-      className="fixed inset-0 z-50 h-screen w-screen bg-white text-gray-900 flex flex-col items-center font-sans select-none overflow-hidden"
-    >
+    <div className="fixed inset-0 z-50 h-screen w-screen bg-white text-gray-900 flex flex-col items-center font-sans select-none overflow-hidden">
       {/* Full-width green accent line */}
       <div
         aria-hidden="true"
@@ -438,9 +415,6 @@ export const QuizSimulator: React.FC<QuizSimulatorProps> = ({
             currentPage={currentPage}
             answers={state.answers}
             flagged={state.flagged}
-            onWheelOverflow={(deltaY) =>
-              mainRef.current?.scrollBy({ top: deltaY })
-            }
             onSelect={(question) => {
               if (templateMode === 'paginated') {
                 setCurrentPage(question.page);
@@ -453,10 +427,7 @@ export const QuizSimulator: React.FC<QuizSimulatorProps> = ({
           />
 
           <div className="flex-1 bg-white pt-6 pb-0 flex flex-col h-full overflow-hidden min-w-0">
-            <main
-              ref={mainRef}
-              className="flex-1 overflow-y-auto pl-6 pr-8 w-full custom-scrollbar flex flex-col justify-between"
-            >
+            <main className="flex-1 overflow-y-auto pl-6 pr-8 w-full custom-scrollbar flex flex-col justify-between">
               <div className="max-w-[780px] w-full flex flex-col justify-between min-h-full">
                 <div>
                   {templateMode === 'paginated' && (

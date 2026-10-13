@@ -40,3 +40,7 @@ cdk/cdk-outputs.json
 # local tooling config
 AGENTS.md
 CLAUDE.md
+
+# test output
+test-results/
+playwright-report/

@@ -7,7 +7,14 @@ on:
     branches: [main]
 
 jobs:
+  # On main, deploy only after every test layer has passed
+  test:
+    if: github.event_name == 'push'
+    uses: ./.github/workflows/ci.yml
+
   deploy:
+    needs: test
+    if: ${{ !cancelled() && (needs.test.result == 'success' || needs.test.result == 'skipped') }}
     runs-on: ubuntu-latest
     steps:
       - name: Checkout Source Code

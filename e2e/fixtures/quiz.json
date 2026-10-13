@@ -1,0 +1,62 @@
+{
+  "id": "e2e-quiz",
+  "title": "End to end quiz",
+  "courseCode": "E2E",
+  "description": "Three questions for the browser tests.",
+  "questions": [
+    {
+      "id": "q1",
+      "number": 1,
+      "type": "mcq",
+      "difficulty": "easy",
+      "prompt": "Which command creates a branch?",
+      "points": 1,
+      "options": [
+        {
+          "id": "a",
+          "text": "git branch"
+        },
+        {
+          "id": "b",
+          "text": "git merge"
+        },
+        {
+          "id": "c",
+          "text": "git tag"
+        }
+      ],
+      "correctAnswer": "a",
+      "explanation": "git branch creates one."
+    },
+    {
+      "id": "q2",
+      "number": 2,
+      "type": "true-false",
+      "difficulty": "easy",
+      "prompt": "S3 stores objects.",
+      "points": 1,
+      "options": [
+        {
+          "id": "true",
+          "text": "True"
+        },
+        {
+          "id": "false",
+          "text": "False"
+        }
+      ],
+      "correctAnswer": "true",
+      "explanation": "It is object storage."
+    },
+    {
+      "id": "q3",
+      "number": 3,
+      "type": "short-answer",
+      "difficulty": "medium",
+      "prompt": "Which service serves the static site?",
+      "points": 1,
+      "correctAnswer": "CloudFront",
+      "explanation": "CloudFront is the CDN."
+    }
+  ]
+}

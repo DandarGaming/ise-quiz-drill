@@ -30,27 +30,55 @@ npm ci
 npm run dev
 ```
 
-| Command                 | What it does                             |
-| ----------------------- | ---------------------------------------- |
-| `npm run dev`           | Start the dev server on `localhost:4321` |
-| `npm run build`         | Build the site into `dist/`              |
-| `npm run preview`       | Serve the production build               |
-| `npm run lint`          | Run ESLint                               |
-| `npm run check`         | Type check with `astro check`            |
-| `npm run test:unit:run` | Run the Vitest suite once                |
-| `npm run format:check`  | Check formatting with Prettier           |
+| Command                    | What it does                             |
+| -------------------------- | ---------------------------------------- |
+| `npm run dev`              | Start the dev server on `localhost:4321` |
+| `npm run build`            | Build the site into `dist/`              |
+| `npm run preview`          | Serve the production build               |
+| `npm run lint`             | Run ESLint                               |
+| `npm run check`            | Type check with `astro check`            |
+| `npm run test:unit:run`    | Run the unit and component tests once    |
+| `npm run test:integration` | Run the integration tests                |
+| `npm run test:e2e`         | Run the Playwright tests (build first)   |
+| `npm run format:check`     | Check formatting with Prettier           |
+
+## Testing
+
+| Layer       | Where                | Tool                    | What it covers                                                                          |
+| ----------- | -------------------- | ----------------------- | --------------------------------------------------------------------------------------- |
+| Unit        | `src/**/*.test.*`    | Vitest, Testing Library | One function or component at a time                                                     |
+| Integration | `tests/integration/` | Vitest, Testing Library | The whole app in jsdom with a real localStorage: create, take, submit, history, library |
+| End to end  | `e2e/`               | Playwright, Chromium    | The same journeys in a real browser against the production build                        |
+
+Run the end-to-end tests locally:
+
+```sh
+npm run build
+npx playwright install chromium
+npm run test:e2e
+```
+
+Playwright is pinned to 1.47.2 because newer versions no longer support
+Ubuntu 20.04. After a failure, `playwright-report/` and `test-results/` hold the
+report and a trace.
 
 ## CI and deployment
 
-- **CI** (`.github/workflows/ci.yml`) runs format check, lint, type check and
-  tests on every pull request and push to `main`.
+- **CI** (`.github/workflows/ci.yml`) has three jobs that run in parallel on
+  every pull request: `validate` (format check, lint, type check, unit tests),
+  `integration` and `e2e` (builds the app and runs Playwright; the report is
+  kept as an artifact when it fails).
 - **Deploy** (`.github/workflows/deploy-static.yml`) builds the site and runs
-  `cdk synth` on pull requests. On `main` it deploys the prerendered pages to
-  S3 and CloudFront and smoke tests the live URL.
+  `cdk synth` on pull requests. On `main` it first calls CI, and only when
+  every job has passed does it deploy the prerendered pages to S3 and
+  CloudFront and smoke test the live URL.
 - **Container Image** (`.github/workflows/container.yml`) builds the SSR
   server image with Podman and smoke tests `/api/health` on pull requests. On
-  `main` it pushes the image to ECR, tagged with the short commit SHA and
-  `latest` ([ADR-005](docs/adr/ADR-005-build-images-with-podman.md)).
+  `main` it also waits for CI, then pushes the image to ECR, tagged with the
+  short commit SHA and `latest`
+  ([ADR-005](docs/adr/ADR-005-build-images-with-podman.md)).
+- How the tests and the gate fit together is in
+  [ADR-006](docs/adr/ADR-006-test-layers-and-ci-gate.md).
 
 ## Container image
 

@@ -256,7 +256,7 @@ export const PromptOptionsForm: React.FC<PromptOptionsFormProps> = ({
         <div
           role="group"
           aria-labelledby="prompt-layout"
-          className="flex bg-gray-100 p-1 rounded-lg border border-gray-200 md:w-1/2"
+          className="flex bg-gray-100 p-1 rounded-lg border border-gray-200"
         >
           {(
             [

@@ -53,76 +53,14 @@ const StrikethroughIcon = ({
   </svg>
 );
 
-const KEYWORDS = [
-  'export',
-  'function',
-  'if',
-  'throw',
-  'return',
-  'const',
-  'let',
-  'var',
-  'import',
-  'from',
-  'new',
-  'class',
-];
-const BUILTINS = ['RangeError', 'Math', 'ceil'];
-
-// Line-numbered code block with light syntax colouring. Memoised because
-// scroll mode renders every question and the colouring is the slow part.
+// Line-numbered code block in one colour. Memoised because scroll mode
+// renders every question at once.
 export const CodeBlock = React.memo(function CodeBlock({
   code,
 }: {
   code: string;
 }) {
   const lines = code.split('\n');
-
-  const renderHighlightedLine = (line: string) => {
-    if (line.trim().startsWith('//')) {
-      return <span className="text-[#6a9955] italic">{line}</span>;
-    }
-
-    const parts = line.split(
-      /(\b(?:export|function|if|throw|return|const|let|var|import|from|new|class|RangeError|Math|ceil)\b|".*?"|'.*?'|`.*?`|\/\/.*)/g,
-    );
-
-    return parts.map((part, i) => {
-      if (KEYWORDS.includes(part)) {
-        return (
-          <span key={i} className="text-[#c586c0] font-semibold">
-            {part}
-          </span>
-        );
-      }
-      if (BUILTINS.includes(part)) {
-        return (
-          <span key={i} className="text-[#4ec9b0]">
-            {part}
-          </span>
-        );
-      }
-      if (
-        part.startsWith('"') ||
-        part.startsWith("'") ||
-        part.startsWith('`')
-      ) {
-        return (
-          <span key={i} className="text-[#ce9178]">
-            {part}
-          </span>
-        );
-      }
-      if (part.startsWith('//')) {
-        return (
-          <span key={i} className="text-[#6a9955] italic">
-            {part}
-          </span>
-        );
-      }
-      return part;
-    });
-  };
 
   return (
     <div
@@ -141,10 +79,10 @@ export const CodeBlock = React.memo(function CodeBlock({
             </div>
           ))}
         </div>
-        <div className="py-3.5 px-4 text-[#d4d4d4] flex-1 whitespace-pre leading-relaxed font-mono">
+        <div className="py-3.5 px-4 text-white flex-1 whitespace-pre leading-relaxed font-mono">
           {lines.map((line, idx) => (
             <div key={idx} className="h-6">
-              {renderHighlightedLine(line)}
+              {line}
             </div>
           ))}
         </div>

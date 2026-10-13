@@ -234,6 +234,22 @@ describe('QuestionRenderer', () => {
     expect(within(code).getByText('2')).toBeInTheDocument();
   });
 
+  it('shows the code in one white colour, without syntax highlighting', () => {
+    render(
+      <Harness
+        question={{
+          ...mcq,
+          codeSnippet: 'public class Test {\n  String s = "x"; // note\n}',
+        }}
+      />,
+    );
+    const code = screen.getByRole('figure', { name: 'Code snippet' });
+
+    expect(code).toHaveTextContent('String s = "x"; // note');
+    expect(code.querySelector('span')).toBeNull();
+    expect(code.querySelector('.text-white')).not.toBeNull();
+  });
+
   describe('review mode', () => {
     const review = (question: Question, answer?: string | string[]) =>
       render(

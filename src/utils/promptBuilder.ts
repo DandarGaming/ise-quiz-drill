@@ -6,36 +6,44 @@ import type {
 
 export type DifficultyMode = 'auto' | 'easy' | 'medium' | 'hard' | 'custom';
 
-export interface PromptOptions {
+// Settings the app applies itself; none of them is sent to the AI
+export interface TestConfig {
   title: string;
-  questionCount: number;
   timeLimitMinutes: number;
   templateMode: TemplateMode;
+  antiCheat: AntiCheatOptions;
+}
+
+// What the AI is asked to write
+export interface PromptOptions {
+  questionCount: number;
   difficulty: DifficultyMode;
   // Percentages, only used when difficulty is 'custom'
   mix: { easy: number; medium: number; hard: number };
   topics: string;
   types: QuestionType[];
   notes: string;
-  antiCheat: AntiCheatOptions;
 }
 
-export const defaultPromptOptions: PromptOptions = {
+export const defaultTestConfig: TestConfig = {
   title: '',
-  questionCount: 10,
   timeLimitMinutes: 15,
   templateMode: 'paginated',
-  difficulty: 'auto',
-  mix: { easy: 30, medium: 50, hard: 20 },
-  topics: '',
-  types: ['mcq', 'multi-select', 'true-false', 'short-answer'],
-  notes: '',
   antiCheat: {
     enabled: false,
     tabLock: true,
     uiRestrictions: true,
     fullscreenLock: true,
   },
+};
+
+export const defaultPromptOptions: PromptOptions = {
+  questionCount: 10,
+  difficulty: 'auto',
+  mix: { easy: 30, medium: 50, hard: 20 },
+  topics: '',
+  types: ['mcq', 'multi-select', 'true-false', 'short-answer'],
+  notes: '',
 };
 
 const TYPE_RULES: Record<QuestionType, string> = {
@@ -80,9 +88,6 @@ export function validatePromptOptions(options: PromptOptions): string | null {
   if (options.questionCount < 1 || options.questionCount > 50) {
     return 'Choose between 1 and 50 questions.';
   }
-  if (options.timeLimitMinutes < 1 || options.timeLimitMinutes > 180) {
-    return 'Choose a time limit between 1 and 180 minutes.';
-  }
   if (options.types.length === 0) return 'Select at least one question type.';
   if (options.difficulty === 'custom') {
     const { easy, medium, hard } = options.mix;
@@ -94,11 +99,17 @@ export function validatePromptOptions(options: PromptOptions): string | null {
   return null;
 }
 
+// Returns why the quiz cannot be started yet, or null when it is ready
+export function validateTestConfig(config: TestConfig): string | null {
+  if (!config.title.trim()) return 'Enter a test title.';
+  if (config.timeLimitMinutes < 1 || config.timeLimitMinutes > 180) {
+    return 'Choose a time limit between 1 and 180 minutes.';
+  }
+  return null;
+}
+
 // The id is passed in, so the same options always give the same text
 export function buildPrompt(options: PromptOptions, id: string): string {
-  const title = options.title.trim()
-    ? `Exam Title / Subject: "${options.title.trim()}"`
-    : 'Exam Title: Generate an appropriate course code and descriptive exam title from the study material.';
   const difficulty = difficultyRules(options);
   const types = options.types.map((type) => TYPE_RULES[type]).join('\n  - ');
   const topics = options.topics.trim()
@@ -123,7 +134,6 @@ Litmus test: if a question's correct answer would change when the lecturer edits
 
 ═══ EXAM PARAMETERS ═══
 
-- ${title}
 - Total Questions: ${options.questionCount}
 - ${difficulty}
 - ${topics}
@@ -167,7 +177,7 @@ Return ONLY valid JSON inside a \`\`\`json\`\`\` code block. No conversational t
 \`\`\`json
 {
   "id": "${id}",
-  "title": "${options.title.trim() || '[COURSE CODE] — [EXAM TITLE]'}",
+  "title": "[COURSE CODE] — [EXAM TITLE]",
   "courseCode": "[COURSE CODE]",
   "description": "[Brief summary of topics covered]",
   "questions": [

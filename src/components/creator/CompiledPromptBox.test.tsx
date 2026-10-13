@@ -5,19 +5,48 @@ import userEvent from '@testing-library/user-event';
 import { CompiledPromptBox } from './CompiledPromptBox';
 
 const props = {
-  prompt: 'Generate a quiz',
-  isNoTypeSelected: false,
-  totalCustomPct: 100,
-  isPctInvalid: false,
+  prompt: 'Generate a quiz' as string | null,
+  isStale: false,
+  error: null as string | null,
+  onUpdate: () => {},
 };
 
 describe('CompiledPromptBox', () => {
-  it('shows the prompt and copies it', async () => {
+  it('starts empty, with Update Prompt highlighted and Copy locked', () => {
+    render(<CompiledPromptBox {...props} prompt={null} isStale />);
+
+    const update = screen.getByRole('button', { name: 'Update Prompt' });
+    expect(update).toBeEnabled();
+    expect(update).toHaveAttribute('data-highlight', 'true');
+    expect(screen.getByRole('button', { name: 'Copy Locked' })).toBeDisabled();
+    expect(screen.getByRole('status')).toHaveTextContent('No prompt yet');
+  });
+
+  it('asks for the update when the prompt is out of date', async () => {
+    const onUpdate = vi.fn();
+    render(<CompiledPromptBox {...props} isStale onUpdate={onUpdate} />);
+
+    const update = screen.getByRole('button', { name: 'Update Prompt' });
+    expect(update).toHaveAttribute('data-highlight', 'true');
+    expect(screen.getByRole('button', { name: 'Copy Locked' })).toBeDisabled();
+    expect(screen.getByRole('status')).toHaveTextContent(
+      'Options changed since this prompt was built',
+    );
+    expect(screen.getByText('Generate a quiz')).toBeInTheDocument();
+
+    await userEvent.click(update);
+    expect(onUpdate).toHaveBeenCalledOnce();
+  });
+
+  it('shows an up to date prompt and copies it', async () => {
     const user = userEvent.setup();
     const writeText = vi.spyOn(navigator.clipboard, 'writeText');
     render(<CompiledPromptBox {...props} />);
 
-    expect(screen.getByText('Generate a quiz')).toBeInTheDocument();
+    const update = screen.getByRole('button', { name: 'Prompt Up to Date' });
+    expect(update).toBeDisabled();
+    expect(update).not.toHaveAttribute('data-highlight');
+
     await user.click(screen.getByRole('button', { name: 'Copy AI Prompt' }));
 
     expect(writeText).toHaveBeenCalledWith('Generate a quiz');
@@ -25,23 +54,22 @@ describe('CompiledPromptBox', () => {
     expect(screen.getByRole('status')).toHaveTextContent('Prompt copied');
   });
 
-  it('locks the prompt when no question type is selected', () => {
-    render(<CompiledPromptBox {...props} isNoTypeSelected />);
+  it('locks Update Prompt and shows the reason when the options are invalid', () => {
+    render(
+      <CompiledPromptBox
+        {...props}
+        prompt={null}
+        isStale
+        error="Select at least one question type."
+      />,
+    );
 
     expect(
-      screen.getByRole('button', { name: 'Prompt Locked' }),
+      screen.getByRole('button', { name: 'Update Prompt' }),
     ).toBeDisabled();
-    expect(
-      screen.getByRole('heading', { name: 'No Question Types Selected' }),
-    ).toBeInTheDocument();
-  });
-
-  it('locks the prompt and shows the total when the mix is not 100%', () => {
-    render(<CompiledPromptBox {...props} isPctInvalid totalCustomPct={90} />);
-
-    expect(
-      screen.getByRole('heading', { name: 'Invalid Percentage Allocation' }),
-    ).toBeInTheDocument();
-    expect(screen.getByText('90%')).toBeInTheDocument();
+    expect(screen.getByRole('alert')).toHaveTextContent(
+      'Select at least one question type.',
+    );
+    expect(screen.getByRole('button', { name: 'Copy Locked' })).toBeDisabled();
   });
 });

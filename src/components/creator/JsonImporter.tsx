@@ -6,6 +6,8 @@ import { parseQuizJson, type ImportSettings } from '../../utils/quizSchema';
 export interface JsonImporterProps {
   settings: ImportSettings;
   onStart: (quiz: QuizConfig) => void;
+  // Why the quiz cannot start yet, for example a missing title
+  blockedReason?: string | null;
 }
 
 const fixRequest = (error: string) =>
@@ -14,6 +16,7 @@ const fixRequest = (error: string) =>
 export const JsonImporter: React.FC<JsonImporterProps> = ({
   settings,
   onStart,
+  blockedReason = null,
 }) => {
   const [jsonInput, setJsonInput] = useState('');
   const [isDragOver, setIsDragOver] = useState(false);
@@ -54,17 +57,9 @@ export const JsonImporter: React.FC<JsonImporterProps> = ({
 
   return (
     <section aria-labelledby="json-importer-title" className="space-y-4">
-      <div className="flex items-center gap-2">
-        <span className="bg-[#006fbf] text-white px-2.5 py-1 rounded text-xs font-bold uppercase tracking-wider">
-          Step 3
-        </span>
-        <h2
-          id="json-importer-title"
-          className="text-xl font-bold text-gray-900"
-        >
-          Paste JSON Payload or Drag & Drop File
-        </h2>
-      </div>
+      <h3 id="json-importer-title" className="text-xl font-bold text-gray-900">
+        Paste JSON Payload or Drag & Drop File
+      </h3>
 
       <div
         onDragOver={(e) => {
@@ -210,14 +205,26 @@ export const JsonImporter: React.FC<JsonImporterProps> = ({
             </p>
           </div>
 
-          <button
-            type="button"
-            onClick={() => onStart(parsedQuiz)}
-            className="px-8 py-3 bg-[#006fbf] hover:bg-[#005694] text-white rounded-lg font-bold text-base transition-all flex items-center gap-2 shadow-md hover:shadow-lg cursor-pointer transform hover:-translate-y-0.5 active:translate-y-0"
-          >
-            <Play aria-hidden="true" className="w-5 h-5 fill-current" /> Start
-            Quiz Simulation Now
-          </button>
+          <div className="flex flex-col items-end gap-1.5">
+            <button
+              type="button"
+              onClick={() => onStart(parsedQuiz)}
+              disabled={!!blockedReason}
+              className={`px-8 py-3 rounded-lg font-bold text-base transition-all flex items-center gap-2 ${
+                blockedReason
+                  ? 'bg-gray-200 text-gray-500 cursor-not-allowed'
+                  : 'bg-[#006fbf] hover:bg-[#005694] text-white shadow-md hover:shadow-lg cursor-pointer transform hover:-translate-y-0.5 active:translate-y-0'
+              }`}
+            >
+              <Play aria-hidden="true" className="w-5 h-5 fill-current" /> Start
+              Quiz Simulation Now
+            </button>
+            {blockedReason && (
+              <span className="text-xs font-semibold text-amber-700">
+                {blockedReason}
+              </span>
+            )}
+          </div>
         </div>
       )}
     </section>

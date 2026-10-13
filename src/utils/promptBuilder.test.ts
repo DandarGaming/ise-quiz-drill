@@ -2,8 +2,11 @@ import { describe, it, expect } from 'vitest';
 import {
   buildPrompt,
   defaultPromptOptions,
+  defaultTestConfig,
   validatePromptOptions,
+  validateTestConfig,
   type PromptOptions,
+  type TestConfig,
 } from './promptBuilder';
 
 const options = (overrides: Partial<PromptOptions> = {}): PromptOptions => ({
@@ -11,14 +14,22 @@ const options = (overrides: Partial<PromptOptions> = {}): PromptOptions => ({
   ...overrides,
 });
 
+const config = (overrides: Partial<TestConfig> = {}): TestConfig => ({
+  ...defaultTestConfig,
+  title: 'Midterm',
+  ...overrides,
+});
+
 describe('buildPrompt', () => {
-  it('uses the given title, or asks the AI to pick one', () => {
-    expect(
-      buildPrompt(options({ title: 'CS4421 Midterm' }), 'quiz-1'),
-    ).toContain('Exam Title / Subject: "CS4421 Midterm"');
-    expect(buildPrompt(options({ title: '  ' }), 'quiz-1')).toContain(
-      'Exam Title: Generate an appropriate course code',
-    );
+  it('leaves the title to the app and keeps only a placeholder for the AI', () => {
+    const prompt = buildPrompt(options(), 'quiz-1');
+    expect(prompt).not.toContain('Exam Title');
+    expect(prompt).toContain('"title": "[COURSE CODE] — [EXAM TITLE]"');
+  });
+
+  it('does not mention settings that the app applies itself', () => {
+    const prompt = buildPrompt(options(), 'quiz-1');
+    expect(prompt).not.toMatch(/time limit|anti-cheat|proctor|fullscreen/i);
   });
 
   it('asks for the chosen number of questions and only the chosen types', () => {
@@ -90,11 +101,32 @@ describe('validatePromptOptions', () => {
     ).toBeNull();
   });
 
-  it('needs a question count and a time limit', () => {
+  it('needs a question count between 1 and 50', () => {
     expect(validatePromptOptions(options({ questionCount: 0 }))).toBe(
       'Choose between 1 and 50 questions.',
     );
-    expect(validatePromptOptions(options({ timeLimitMinutes: 0 }))).toBe(
+  });
+});
+
+describe('validateTestConfig', () => {
+  it('accepts a title with the default settings', () => {
+    expect(validateTestConfig(config())).toBeNull();
+  });
+
+  it('needs a title', () => {
+    expect(validateTestConfig(config({ title: '' }))).toBe(
+      'Enter a test title.',
+    );
+    expect(validateTestConfig(config({ title: '   ' }))).toBe(
+      'Enter a test title.',
+    );
+  });
+
+  it('needs a time limit between 1 and 180 minutes', () => {
+    expect(validateTestConfig(config({ timeLimitMinutes: 0 }))).toBe(
+      'Choose a time limit between 1 and 180 minutes.',
+    );
+    expect(validateTestConfig(config({ timeLimitMinutes: 181 }))).toBe(
       'Choose a time limit between 1 and 180 minutes.',
     );
   });

@@ -20,7 +20,6 @@ export const CompiledPromptBox: React.FC<CompiledPromptBoxProps> = ({
   const [promptCopied, setPromptCopied] = useState(false);
   const isEmpty = prompt === null;
   const isUpToDate = !isEmpty && !isStale;
-  const needsUpdate = !error && !isUpToDate;
 
   useEffect(() => {
     if (!promptCopied) return;
@@ -69,13 +68,15 @@ export const CompiledPromptBox: React.FC<CompiledPromptBoxProps> = ({
             type="button"
             onClick={onUpdate}
             disabled={!!error || isUpToDate}
-            data-highlight={needsUpdate ? 'true' : undefined}
-            className={`px-5 py-2.5 rounded-lg font-bold text-sm transition-all flex items-center gap-2 shadow-sm ${
+            data-state={
+              error ? 'blocked' : isUpToDate ? 'up-to-date' : 'needs-update'
+            }
+            className={`px-5 py-2.5 rounded-lg font-bold text-sm transition-colors flex items-center gap-2 ${
               error
-                ? 'bg-slate-700 text-slate-400 opacity-50 cursor-not-allowed'
+                ? 'bg-slate-600 text-slate-300 cursor-not-allowed'
                 : isUpToDate
-                  ? 'bg-slate-700 text-slate-300 cursor-default'
-                  : 'bg-white hover:bg-slate-100 text-slate-900 cursor-pointer'
+                  ? 'bg-green-600 text-white cursor-default'
+                  : 'bg-amber-500 hover:bg-amber-400 text-slate-900 cursor-pointer'
             }`}
           >
             {isUpToDate ? (
@@ -94,9 +95,9 @@ export const CompiledPromptBox: React.FC<CompiledPromptBoxProps> = ({
             type="button"
             onClick={handleCopyPrompt}
             disabled={!isUpToDate}
-            className={`px-5 py-2.5 rounded-lg font-bold text-sm transition-all flex items-center gap-2 shadow-sm ${
+            className={`px-5 py-2.5 rounded-lg font-bold text-sm transition-colors flex items-center gap-2 ${
               !isUpToDate
-                ? 'bg-slate-700 text-slate-400 opacity-50 cursor-not-allowed'
+                ? 'bg-slate-600 text-slate-200 cursor-not-allowed'
                 : promptCopied
                   ? 'bg-green-600 text-white cursor-pointer'
                   : 'bg-[#006fbf] hover:bg-[#005694] text-white cursor-pointer'
@@ -126,7 +127,7 @@ export const CompiledPromptBox: React.FC<CompiledPromptBoxProps> = ({
       {error && (
         <p
           role="alert"
-          className="flex items-center gap-2 text-xs font-semibold text-amber-300"
+          className="flex items-center gap-2 text-xs font-semibold text-red-300"
         >
           <AlertTriangle aria-hidden="true" className="w-4 h-4 flex-shrink-0" />
           {error}

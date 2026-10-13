@@ -134,6 +134,22 @@ describe('PromptOptionsForm', () => {
     ).toBeInTheDocument();
   });
 
+  it('draws the preset buttons in the brand colour', () => {
+    render(<Harness />);
+
+    for (const name of [
+      '+ Code Snippets & Output',
+      '+ Scenario-Based',
+      '+ Tricky Edge Cases',
+      '+ Step-by-Step Explanation',
+    ]) {
+      expect(screen.getByRole('button', { name })).toHaveClass(
+        'text-[#006fbf]',
+        'border-[#006fbf]',
+      );
+    }
+  });
+
   it('adds preset instructions to the notes', async () => {
     const onChange = vi.fn();
     render(<Harness onChange={onChange} />);

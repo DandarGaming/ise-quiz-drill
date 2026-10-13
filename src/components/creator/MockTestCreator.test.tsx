@@ -48,7 +48,7 @@ describe('MockTestCreator', () => {
     render(<MockTestCreator onStart={() => {}} />);
 
     expect(promptBox()).not.toHaveTextContent('Total Questions');
-    expect(updateButton()).toHaveAttribute('data-highlight', 'true');
+    expect(updateButton()).toHaveAttribute('data-state', 'needs-update');
     expect(screen.getByRole('button', { name: 'Copy Locked' })).toBeDisabled();
   });
 
@@ -75,7 +75,7 @@ describe('MockTestCreator', () => {
     await userEvent.type(count, '12');
 
     expect(promptBox()).toHaveTextContent('Total Questions: 10');
-    expect(updateButton()).toHaveAttribute('data-highlight', 'true');
+    expect(updateButton()).toHaveAttribute('data-state', 'needs-update');
     expect(screen.getByRole('button', { name: 'Copy Locked' })).toBeDisabled();
 
     await userEvent.click(updateButton());
@@ -126,7 +126,7 @@ describe('MockTestCreator', () => {
       screen.getByRole('button', { name: 'Start Quiz Simulation Now' });
 
     expect(start()).toBeDisabled();
-    expect(screen.getByText('Enter a test title.')).toBeInTheDocument();
+    expect(screen.getByText('Title required')).toBeInTheDocument();
 
     await userEvent.type(screen.getByLabelText('Test Title'), 'My Midterm');
     const time = screen.getByLabelText('Time Limit (Minutes)');

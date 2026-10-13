@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { AlertTriangle } from 'lucide-react';
 import type { TestConfig } from '../../utils/promptBuilder';
 
@@ -22,6 +22,8 @@ export const TestConfigForm: React.FC<TestConfigFormProps> = ({
   value,
   onChange,
 }) => {
+  const [titleTouched, setTitleTouched] = useState(false);
+  const titleMissing = titleTouched && !value.title.trim();
   const set = <K extends keyof TestConfig>(key: K, next: TestConfig[K]) =>
     onChange({ ...value, [key]: next });
 
@@ -46,14 +48,23 @@ export const TestConfigForm: React.FC<TestConfigFormProps> = ({
           <span aria-hidden="true" className="text-red-600 font-bold">
             *
           </span>
+          {titleMissing && (
+            <span className="ml-auto text-xs font-bold text-red-600">
+              Required
+            </span>
+          )}
         </div>
         <input
           id="test-title"
           type="text"
           required
+          aria-invalid={titleMissing ? true : undefined}
           value={value.title}
           onChange={(e) => set('title', e.target.value)}
-          className={`${textInput} font-medium`}
+          onBlur={() => setTitleTouched(true)}
+          className={`${textInput} font-medium ${
+            titleMissing ? 'border-red-600 focus:ring-red-600' : ''
+          }`}
         />
       </div>
 

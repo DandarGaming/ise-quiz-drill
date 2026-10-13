@@ -114,20 +114,16 @@ describe('validateTestConfig', () => {
   });
 
   it('needs a title', () => {
-    expect(validateTestConfig(config({ title: '' }))).toBe(
-      'Enter a test title.',
-    );
-    expect(validateTestConfig(config({ title: '   ' }))).toBe(
-      'Enter a test title.',
-    );
+    expect(validateTestConfig(config({ title: '' }))).toBe('Title required');
+    expect(validateTestConfig(config({ title: '   ' }))).toBe('Title required');
   });
 
   it('needs a time limit between 1 and 180 minutes', () => {
     expect(validateTestConfig(config({ timeLimitMinutes: 0 }))).toBe(
-      'Choose a time limit between 1 and 180 minutes.',
+      'Time limit: 1 to 180 minutes',
     );
     expect(validateTestConfig(config({ timeLimitMinutes: 181 }))).toBe(
-      'Choose a time limit between 1 and 180 minutes.',
+      'Time limit: 1 to 180 minutes',
     );
   });
 });

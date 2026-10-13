@@ -101,9 +101,9 @@ export function validatePromptOptions(options: PromptOptions): string | null {
 
 // Returns why the quiz cannot be started yet, or null when it is ready
 export function validateTestConfig(config: TestConfig): string | null {
-  if (!config.title.trim()) return 'Enter a test title.';
+  if (!config.title.trim()) return 'Title required';
   if (config.timeLimitMinutes < 1 || config.timeLimitMinutes > 180) {
-    return 'Choose a time limit between 1 and 180 minutes.';
+    return 'Time limit: 1 to 180 minutes';
   }
   return null;
 }

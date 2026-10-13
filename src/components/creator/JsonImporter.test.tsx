@@ -36,7 +36,7 @@ describe('JsonImporter', () => {
       <JsonImporter
         settings={settings}
         onStart={onStart}
-        blockedReason="Enter a test title."
+        blockedReason="Title required"
       />,
     );
 
@@ -45,7 +45,7 @@ describe('JsonImporter', () => {
     expect(
       screen.getByRole('button', { name: 'Start Quiz Simulation Now' }),
     ).toBeDisabled();
-    expect(screen.getByText('Enter a test title.')).toBeInTheDocument();
+    expect(screen.getByText('Title required')).toBeInTheDocument();
     expect(onStart).not.toHaveBeenCalled();
   });
 

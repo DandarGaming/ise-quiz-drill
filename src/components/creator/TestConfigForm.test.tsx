@@ -40,6 +40,22 @@ describe('TestConfigForm', () => {
     expect(last(onChange).title).toBe('Midterm');
   });
 
+  it('flags an empty title with one word once the field is left', async () => {
+    render(<Harness />);
+    const title = screen.getByLabelText('Test Title');
+    expect(screen.queryByText('Required')).toBeNull();
+
+    await userEvent.click(title);
+    await userEvent.tab();
+
+    expect(screen.getByText('Required')).toBeInTheDocument();
+    expect(title).toBeInvalid();
+
+    await userEvent.type(title, 'Midterm');
+    expect(screen.queryByText('Required')).toBeNull();
+    expect(title).toBeValid();
+  });
+
   it('edits the time limit', async () => {
     const onChange = vi.fn();
     render(<Harness onChange={onChange} />);

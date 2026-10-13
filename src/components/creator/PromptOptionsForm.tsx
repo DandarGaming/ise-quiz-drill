@@ -270,7 +270,7 @@ export const PromptOptionsForm: React.FC<PromptOptionsFormProps> = ({
                     : chip.text,
                 )
               }
-              className="bg-white hover:bg-gray-50 text-gray-700 border border-gray-300 px-2.5 py-1 rounded-md text-xs font-bold transition-colors cursor-pointer"
+              className="bg-white hover:bg-[#006fbf] text-[#006fbf] hover:text-white border border-[#006fbf] px-2.5 py-1 rounded-md text-xs font-bold transition-colors cursor-pointer"
             >
               {chip.label}
             </button>

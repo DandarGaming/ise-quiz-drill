@@ -116,6 +116,15 @@ describe('QuestionRenderer', () => {
     expect(screen.getByRole('radio', { name: 'git branch' })).toBeChecked();
   });
 
+  // The input is visually hidden (absolute). Without a positioned label around
+  // it, its box sits wherever the long scroll-mode page puts it, and focusing
+  // it scrolls the fixed, overflow-hidden quiz frame out of view (blank page).
+  it('keeps the hidden input inside its label so focusing it cannot scroll the page', () => {
+    render(<Harness question={mcq} />);
+    const input = screen.getAllByRole('radio')[0];
+    expect(input.closest('label')?.className).toContain('relative');
+  });
+
   it('renders true/false as radio buttons', () => {
     render(<Harness question={trueFalse} />);
     expect(screen.getByRole('radio', { name: 'True' })).toBeInTheDocument();
@@ -223,6 +232,22 @@ describe('QuestionRenderer', () => {
     const code = screen.getByRole('figure', { name: 'Code snippet' });
     expect(code).toHaveTextContent('const b = 2;');
     expect(within(code).getByText('2')).toBeInTheDocument();
+  });
+
+  it('shows the code in one white colour, without syntax highlighting', () => {
+    render(
+      <Harness
+        question={{
+          ...mcq,
+          codeSnippet: 'public class Test {\n  String s = "x"; // note\n}',
+        }}
+      />,
+    );
+    const code = screen.getByRole('figure', { name: 'Code snippet' });
+
+    expect(code).toHaveTextContent('String s = "x"; // note');
+    expect(code.querySelector('span')).toBeNull();
+    expect(code.querySelector('.text-white')).not.toBeNull();
   });
 
   describe('review mode', () => {

@@ -102,6 +102,23 @@ describe('QuizSimulator', () => {
     expect(scrollBy).toHaveBeenCalledWith({ top: 150 });
   });
 
+  it('scrolls the quiz when the wheel is used anywhere outside it', () => {
+    const scrollBy = vi.fn();
+    HTMLElement.prototype.scrollBy = scrollBy;
+    const { container } = render(
+      <QuizSimulator quiz={{ ...quiz, templateMode: 'single-page' }} />,
+    );
+
+    // The white side margins around the quiz column
+    fireEvent.wheel(container.firstElementChild!, { deltaY: 90 });
+    expect(scrollBy).toHaveBeenCalledWith({ top: 90 });
+
+    // Over the quiz itself the browser scrolls, so nothing is forwarded
+    scrollBy.mockClear();
+    fireEvent.wheel(screen.getByRole('main'), { deltaY: 90 });
+    expect(scrollBy).not.toHaveBeenCalled();
+  });
+
   it('saves answers and restores them after a reload', async () => {
     const u = user();
     const { unmount } = render(<QuizSimulator quiz={quiz} />);

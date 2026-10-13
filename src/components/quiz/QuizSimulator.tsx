@@ -113,7 +113,26 @@ export const QuizSimulator: React.FC<QuizSimulatorProps> = ({
   const submitted = record !== null;
   const submittedRef = useRef(false);
   const mainRef = useRef<HTMLElement>(null);
+  const frameRef = useRef<HTMLDivElement>(null);
   const warned = useRef(new Set<number>());
+
+  // The quiz column does not fill a wide window, so the wheel over the white
+  // margins would do nothing. Pass it on to the quiz. Over the quiz the
+  // browser scrolls by itself, and the navigator handles its own wheel.
+  useEffect(() => {
+    const frame = frameRef.current;
+    if (!frame) return;
+    const onWheel = (e: WheelEvent) => {
+      const main = mainRef.current;
+      const target = e.target as Element;
+      if (!main || e.defaultPrevented || main.contains(target)) return;
+      if (target.closest('[role="dialog"]')) return;
+      e.preventDefault();
+      main.scrollBy({ top: e.deltaMode === 1 ? e.deltaY * 16 : e.deltaY });
+    };
+    frame.addEventListener('wheel', onWheel, { passive: false });
+    return () => frame.removeEventListener('wheel', onWheel);
+  }, [submitted]);
 
   const showToast = (message: string) =>
     setToastState({ message, isExiting: false });
@@ -272,7 +291,10 @@ export const QuizSimulator: React.FC<QuizSimulatorProps> = ({
     }));
 
   return (
-    <div className="fixed inset-0 z-50 h-screen w-screen bg-white text-gray-900 flex flex-col items-center font-sans select-none overflow-hidden">
+    <div
+      ref={frameRef}
+      className="fixed inset-0 z-50 h-screen w-screen bg-white text-gray-900 flex flex-col items-center font-sans select-none overflow-hidden"
+    >
       {/* Full-width green accent line */}
       <div
         aria-hidden="true"

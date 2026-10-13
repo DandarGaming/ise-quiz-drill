@@ -3,13 +3,7 @@ import { afterEach, beforeEach, describe, it, expect, vi } from 'vitest';
 import { act, render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { QuizSimulator } from './QuizSimulator';
-import {
-  attemptKey,
-  HISTORY_KEY,
-  loadAttempt,
-  loadHistory,
-  saveAttempt,
-} from '../../utils/attemptStorage';
+import { HISTORY_KEY, loadHistory } from '../../utils/attemptStorage';
 import type { Question, QuizConfig } from '../../types/quiz';
 
 const START = Date.parse('2026-10-12T09:00:00.000Z');
@@ -90,41 +84,17 @@ describe('QuizSimulator', () => {
     expect(screen.queryByRole('button', { name: 'Next Page' })).toBeNull();
   });
 
-  it('saves answers and restores them after a reload', async () => {
+  it('keeps an attempt in memory only, so a later start is always fresh', async () => {
     const u = user();
-    const { unmount } = render(<QuizSimulator quiz={quiz} />);
+    render(<QuizSimulator quiz={quiz} />);
 
     await u.click(screen.getByRole('radio', { name: 'Right 1' }));
     await u.click(screen.getAllByRole('button', { name: 'Next Page' })[0]);
-    unmount();
 
-    expect(loadAttempt(localStorage, 'sim')).toMatchObject({
-      answers: { q1: 'a' },
-      currentPage: 2,
-    });
-
-    render(<QuizSimulator quiz={quiz} />);
-    expect(pageLabel()).toHaveTextContent('Page 2 of 3');
-    expect(screen.getByText('1 of 3 questions saved')).toBeInTheDocument();
+    expect(localStorage).toHaveLength(0);
   });
 
-  it('counts down from the saved deadline, not from the full time', () => {
-    saveAttempt(localStorage, {
-      quizId: 'sim',
-      startedAt: new Date(START - 540_000).toISOString(),
-      deadline: START + 60_000,
-      currentPage: 1,
-      answers: {},
-      flagged: {},
-      eventLog: [],
-    });
-
-    render(<QuizSimulator quiz={quiz} />);
-
-    expect(screen.getByRole('timer')).toHaveTextContent('0:01:00 remaining');
-  });
-
-  it('records one attempt in history when submitted and clears the saved attempt', async () => {
+  it('records one attempt in history when submitted', async () => {
     const u = user();
     render(<QuizSimulator quiz={quiz} />);
     await u.click(screen.getByRole('radio', { name: 'Right 1' }));
@@ -145,7 +115,7 @@ describe('QuizSimulator', () => {
     });
     expect(history[0].timestamp).toMatch(/^\d{4}-\d\d-\d\dT.*Z$/);
     expect(history[0].timeTakenSeconds).toBeGreaterThanOrEqual(90);
-    expect(localStorage.getItem(attemptKey('sim'))).toBeNull();
+    expect(Object.keys(localStorage)).toEqual([HISTORY_KEY]);
   });
 
   it('submits once by itself when time runs out', () => {
@@ -183,7 +153,8 @@ describe('QuizSimulator', () => {
     expect(localStorage.getItem(HISTORY_KEY)).not.toBeNull();
   });
 
-  it('logs blocked copying in the attempt when anti-cheat is on', () => {
+  it('logs blocked copying in the attempt when anti-cheat is on', async () => {
+    const u = user();
     render(
       <QuizSimulator
         quiz={{
@@ -201,12 +172,13 @@ describe('QuizSimulator', () => {
     act(() => {
       document.dispatchEvent(new Event('copy', { cancelable: true }));
     });
-
-    expect(loadAttempt(localStorage, 'sim')?.eventLog).toEqual([
-      expect.objectContaining({ type: 'copy_attempt' }),
-    ]);
     expect(screen.getByRole('status')).toHaveTextContent(
       'Copying text is disabled during this exam.',
     );
+
+    await submitThroughDialog(u);
+    expect(loadHistory(localStorage)[0].eventLog).toEqual([
+      expect.objectContaining({ type: 'copy_attempt' }),
+    ]);
   });
 });

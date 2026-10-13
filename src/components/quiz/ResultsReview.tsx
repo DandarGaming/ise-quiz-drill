@@ -89,15 +89,17 @@ export const ResultsReview: React.FC<ResultsReviewProps> = ({
       : correctIds.has(q.id) === (filterMode === 'correct'),
   );
 
-  const filterButton = (active: boolean, activeClass: string) =>
-    `px-3 py-1.5 rounded-md text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 ${
-      active
-        ? `${activeClass} text-white shadow-xs`
-        : 'text-gray-700 hover:text-gray-900 hover:bg-gray-200/70'
+  const filterButton = (
+    active: boolean,
+    activeClass: string,
+    idleClass: string,
+  ) =>
+    `px-3 py-1.5 rounded-md text-xs font-bold transition-colors cursor-pointer flex items-center gap-1.5 ${
+      active ? `${activeClass} text-white` : `${idleClass} hover:bg-white`
     }`;
-  const countPill = (active: boolean, idleClass: string) =>
+  const countPill = (active: boolean, activeText: string, idleBg: string) =>
     `px-1.5 py-0.2 rounded-full text-[11px] font-extrabold ${
-      active ? 'bg-white/20 text-white' : idleClass
+      active ? `bg-white ${activeText}` : `${idleBg} text-white`
     }`;
 
   return (
@@ -311,6 +313,7 @@ export const ResultsReview: React.FC<ResultsReviewProps> = ({
                   className={filterButton(
                     filterMode === 'incorrect',
                     'bg-red-600',
+                    'text-red-700',
                   )}
                 >
                   <X aria-hidden="true" className="w-3.5 h-3.5" />
@@ -318,7 +321,8 @@ export const ResultsReview: React.FC<ResultsReviewProps> = ({
                   <span
                     className={countPill(
                       filterMode === 'incorrect',
-                      'bg-red-100 text-red-800',
+                      'text-red-700',
+                      'bg-red-600',
                     )}
                   >
                     {incorrectCount}
@@ -331,6 +335,7 @@ export const ResultsReview: React.FC<ResultsReviewProps> = ({
                   className={filterButton(
                     filterMode === 'correct',
                     'bg-emerald-600',
+                    'text-emerald-700',
                   )}
                 >
                   <Check aria-hidden="true" className="w-3.5 h-3.5" />
@@ -338,7 +343,8 @@ export const ResultsReview: React.FC<ResultsReviewProps> = ({
                   <span
                     className={countPill(
                       filterMode === 'correct',
-                      'bg-emerald-100 text-emerald-800',
+                      'text-emerald-700',
+                      'bg-emerald-600',
                     )}
                   >
                     {correctCount}
@@ -348,14 +354,19 @@ export const ResultsReview: React.FC<ResultsReviewProps> = ({
                   type="button"
                   aria-pressed={filterMode === 'all'}
                   onClick={() => setFilterMode('all')}
-                  className={filterButton(filterMode === 'all', 'bg-[#006fbf]')}
+                  className={filterButton(
+                    filterMode === 'all',
+                    'bg-[#006fbf]',
+                    'text-[#006fbf]',
+                  )}
                 >
                   <Filter aria-hidden="true" className="w-3.5 h-3.5" />
                   <span>All</span>{' '}
                   <span
                     className={countPill(
                       filterMode === 'all',
-                      'bg-blue-100 text-blue-800',
+                      'text-[#006fbf]',
+                      'bg-[#006fbf]',
                     )}
                   >
                     {totalCount}

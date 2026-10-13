@@ -22,7 +22,7 @@ parallel with CI, so a failing test did not stop a release.
   workflow and `needs` it, so they start only when all three jobs have passed.
   Pull requests skip that step and keep their dry run.
 - Pin Playwright to 1.47.2. Newer versions refuse to install Chromium on
-  Ubuntu 20.04, the system the course machines run.
+  Ubuntu 20.04, which the main development machine still runs.
 
 ## Consequences
 
@@ -30,7 +30,7 @@ parallel with CI, so a failing test did not stop a release.
   tests catch layout problems that jsdom cannot see.
 - Negative: CI runs twice on `main`, once for each gated workflow, and the
   end-to-end job adds about two minutes.
-- Negative: the pinned Playwright must be raised by hand once the machines
-  move to a newer Ubuntu.
+- Negative: the pinned Playwright must be raised by hand once that machine
+  moves to a newer Ubuntu.
 - The end-to-end layer is small on purpose: a few journeys, not every screen,
   to keep it fast and stable. Layout bugs found later get one test each.

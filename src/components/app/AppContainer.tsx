@@ -1,11 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { Library, Wrench } from 'lucide-react';
 import type { QuizAttemptRecord, QuizConfig } from '../../types/quiz';
-import {
-  clearAttempt,
-  loadSavedQuizzes,
-  saveQuiz,
-} from '../../utils/attemptStorage';
+import { loadSavedQuizzes, saveQuiz } from '../../utils/attemptStorage';
 import { browserStorage, safely } from '../../utils/browserStorage';
 import { MockTestCreator } from '../creator/MockTestCreator';
 import { QuizHistory } from '../history/QuizHistory';
@@ -37,9 +33,7 @@ export const AppContainer: React.FC = () => {
     );
   }, [viewMode, storage]);
 
-  // Every start is a new attempt; a finished one only lives in the history
   const handleStartQuiz = (quiz: QuizConfig) => {
-    if (storage) safely(() => clearAttempt(storage, quiz.id));
     setReviewRecord(null);
     setCurrentQuiz(quiz);
     setViewMode('simulator');

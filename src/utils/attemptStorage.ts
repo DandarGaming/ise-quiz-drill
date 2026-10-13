@@ -1,15 +1,10 @@
-import type {
-  AttemptState,
-  QuizAttemptRecord,
-  QuizConfig,
-} from '../types/quiz';
+import type { QuizAttemptRecord, QuizConfig } from '../types/quiz';
 import { isAttemptRecord, isStoredQuiz } from './quizSchema';
 
 // Bump the version when the stored shape changes, so old data is ignored
 // instead of being read with the wrong shape.
 const PREFIX = 'quiz-drill:v1';
 
-export const attemptKey = (quizId: string) => `${PREFIX}:attempt:${quizId}`;
 export const HISTORY_KEY = `${PREFIX}:history`;
 export const QUIZZES_KEY = `${PREFIX}:quizzes`;
 
@@ -22,38 +17,6 @@ function readJson(storage: KeyValueStore, key: string): unknown {
   } catch {
     return null;
   }
-}
-
-const isRecord = (value: unknown): value is Record<string, unknown> =>
-  typeof value === 'object' && value !== null && !Array.isArray(value);
-
-function isAttempt(value: unknown, quizId: string): value is AttemptState {
-  return (
-    isRecord(value) &&
-    value.quizId === quizId &&
-    typeof value.startedAt === 'string' &&
-    typeof value.deadline === 'number' &&
-    typeof value.currentPage === 'number' &&
-    isRecord(value.answers) &&
-    isRecord(value.flagged) &&
-    Array.isArray(value.eventLog)
-  );
-}
-
-export function loadAttempt(
-  storage: KeyValueStore,
-  quizId: string,
-): AttemptState | null {
-  const value = readJson(storage, attemptKey(quizId));
-  return isAttempt(value, quizId) ? value : null;
-}
-
-export function saveAttempt(storage: KeyValueStore, attempt: AttemptState) {
-  storage.setItem(attemptKey(attempt.quizId), JSON.stringify(attempt));
-}
-
-export function clearAttempt(storage: KeyValueStore, quizId: string) {
-  storage.removeItem(attemptKey(quizId));
 }
 
 // Broken entries are skipped one by one, so one bad record does not hide

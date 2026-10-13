@@ -9,12 +9,7 @@ import type {
 import { useAntiCheat } from '../../hooks/useAntiCheat';
 import { useQuizTimer } from '../../hooks/useQuizTimer';
 import { isAnswered, type Answer } from '../../utils/answers';
-import {
-  appendHistory,
-  clearAttempt,
-  loadAttempt,
-  saveAttempt,
-} from '../../utils/attemptStorage';
+import { appendHistory } from '../../utils/attemptStorage';
 import { gradeQuiz } from '../../utils/grading';
 import { paginate } from '../../utils/pagination';
 import {
@@ -98,11 +93,8 @@ export const QuizSimulator: React.FC<QuizSimulatorProps> = ({
   storage = browserStorage(),
 }) => {
   const { questions, totalPages } = useMemo(() => paginate(quiz), [quiz]);
-  const [state, setState] = useState<AttemptState>(
-    () =>
-      (storage && safely(() => loadAttempt(storage, quiz.id))) ??
-      newAttempt(quiz),
-  );
+  // An attempt lives in memory only: a new start or a reload is a new attempt
+  const [state, setState] = useState<AttemptState>(() => newAttempt(quiz));
   const [record, setRecord] = useState<QuizAttemptRecord | null>(null);
   const [isSubmitModalOpen, setIsSubmitModalOpen] = useState(false);
   const [toastState, setToastState] = useState<{
@@ -116,10 +108,6 @@ export const QuizSimulator: React.FC<QuizSimulatorProps> = ({
 
   const showToast = (message: string) =>
     setToastState({ message, isExiting: false });
-
-  useEffect(() => {
-    if (!submitted && storage) safely(() => saveAttempt(storage, state));
-  }, [state, submitted, storage]);
 
   // Submitting is an event, not a state update, so it runs once even under
   // StrictMode; the ref also stops a timer expiry and a click racing.
@@ -145,10 +133,7 @@ export const QuizSimulator: React.FC<QuizSimulatorProps> = ({
       answers: state.answers,
       quizSnapshot: quiz,
     };
-    if (storage) {
-      safely(() => appendHistory(storage, next));
-      safely(() => clearAttempt(storage, quiz.id));
-    }
+    if (storage) safely(() => appendHistory(storage, next));
     setIsSubmitModalOpen(false);
     setRecord(next);
     // Leave fullscreen so the results are read in the normal browser window
@@ -213,7 +198,6 @@ export const QuizSimulator: React.FC<QuizSimulatorProps> = ({
   });
 
   const handleRestartQuiz = () => {
-    if (storage) safely(() => clearAttempt(storage, quiz.id));
     submittedRef.current = false;
     warned.current.clear();
     setToastState({ message: null, isExiting: false });

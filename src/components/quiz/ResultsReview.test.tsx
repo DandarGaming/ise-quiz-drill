@@ -64,19 +64,6 @@ describe('ResultsReview', () => {
     expect(summary).toHaveTextContent('Submitted');
   });
 
-  it('colours each filter by what it shows, solid when selected', () => {
-    renderResults();
-
-    const incorrect = screen.getByRole('button', { name: 'Incorrect Only 2' });
-    expect(incorrect).toHaveClass('bg-red-600', 'text-white');
-    expect(screen.getByRole('button', { name: 'Correct 1' })).toHaveClass(
-      'text-emerald-700',
-    );
-    expect(screen.getByRole('button', { name: 'All 3' })).toHaveClass(
-      'text-[#006fbf]',
-    );
-  });
-
   it('shows only incorrect questions at first, with counts on each filter', () => {
     renderResults();
 

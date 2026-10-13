@@ -112,6 +112,7 @@ export const QuizSimulator: React.FC<QuizSimulatorProps> = ({
   const [isTimerBlinking, setIsTimerBlinking] = useState(false);
   const submitted = record !== null;
   const submittedRef = useRef(false);
+  const mainRef = useRef<HTMLElement>(null);
   const warned = useRef(new Set<number>());
 
   const showToast = (message: string) =>
@@ -415,6 +416,9 @@ export const QuizSimulator: React.FC<QuizSimulatorProps> = ({
             currentPage={currentPage}
             answers={state.answers}
             flagged={state.flagged}
+            onWheelOverflow={(deltaY) =>
+              mainRef.current?.scrollBy({ top: deltaY })
+            }
             onSelect={(question) => {
               if (templateMode === 'paginated') {
                 setCurrentPage(question.page);
@@ -427,7 +431,10 @@ export const QuizSimulator: React.FC<QuizSimulatorProps> = ({
           />
 
           <div className="flex-1 bg-white pt-6 pb-0 flex flex-col h-full overflow-hidden min-w-0">
-            <main className="flex-1 overflow-y-auto pl-6 pr-8 w-full custom-scrollbar flex flex-col justify-between">
+            <main
+              ref={mainRef}
+              className="flex-1 overflow-y-auto pl-6 pr-8 w-full custom-scrollbar flex flex-col justify-between"
+            >
               <div className="max-w-[780px] w-full flex flex-col justify-between min-h-full">
                 <div>
                   {templateMode === 'paginated' && (

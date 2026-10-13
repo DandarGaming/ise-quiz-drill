@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect, useRef } from 'react';
 import type { Question } from '../../types/quiz';
 import { isAnswered, type Answer } from '../../utils/answers';
 import { StraightCheck } from './QuestionRenderer';
@@ -9,6 +9,9 @@ export interface QuestionNavigatorProps {
   answers: Record<string, Answer | undefined>;
   flagged: Record<string, boolean>;
   onSelect: (question: Question) => void;
+  // Called with the wheel movement when the list has nothing left to scroll,
+  // so the quiz next to it keeps scrolling while the pointer is over this list
+  onWheelOverflow?: (deltaY: number) => void;
 }
 
 const tileLabel = (question: Question, answered: boolean, flagged: boolean) =>
@@ -22,7 +25,36 @@ export const QuestionNavigator: React.FC<QuestionNavigatorProps> = ({
   answers,
   flagged,
   onSelect,
+  onWheelOverflow,
 }) => {
+  const navRef = useRef<HTMLElement>(null);
+  const listRef = useRef<HTMLDivElement>(null);
+  const wheelRef = useRef(onWheelOverflow);
+  useEffect(() => {
+    wheelRef.current = onWheelOverflow;
+  });
+
+  // The list takes the part of the wheel movement it can scroll; the rest
+  // goes to the quiz. A native listener is needed to cancel the default
+  // scroll, which React's passive wheel handler cannot do.
+  useEffect(() => {
+    const nav = navRef.current;
+    if (!nav) return;
+    const onWheel = (e: WheelEvent) => {
+      const list = listRef.current;
+      if (!list || !wheelRef.current) return;
+      e.preventDefault();
+      const delta = e.deltaMode === 1 ? e.deltaY * 16 : e.deltaY;
+      const max = list.scrollHeight - list.clientHeight;
+      const next = Math.min(max, Math.max(0, list.scrollTop + delta));
+      const used = next - list.scrollTop;
+      list.scrollTop = next;
+      if (delta !== used) wheelRef.current(delta - used);
+    };
+    nav.addEventListener('wheel', onWheel, { passive: false });
+    return () => nav.removeEventListener('wheel', onWheel);
+  }, []);
+
   const pages = Array.from(new Set(questions.map((q) => q.page))).sort(
     (a, b) => a - b,
   );
@@ -30,9 +62,13 @@ export const QuestionNavigator: React.FC<QuestionNavigatorProps> = ({
   return (
     <nav
       aria-label="Questions"
-      className="w-56 bg-white pt-6 px-4 pb-20 flex flex-col h-full overflow-hidden select-none flex-shrink-0"
+      ref={navRef}
+      className="w-56 bg-white pt-6 px-4 pb-20 flex flex-col h-full overflow-hidden select-none flex-shrink-0 border-r border-gray-200"
     >
-      <div className="flex-1 overflow-y-auto space-y-5 pr-2 custom-scrollbar">
+      <div
+        ref={listRef}
+        className="flex-1 overflow-y-auto space-y-5 pr-2 custom-scrollbar"
+      >
         {pages.map((pageNo) => (
           <div key={pageNo} className="space-y-2">
             <h3 className="text-base font-bold text-gray-900">

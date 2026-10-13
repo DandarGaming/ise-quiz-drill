@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 import { afterEach, beforeEach, describe, it, expect, vi } from 'vitest';
-import { act, render, screen, within } from '@testing-library/react';
+import { act, fireEvent, render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { QuizSimulator } from './QuizSimulator';
 import {
@@ -88,6 +88,18 @@ describe('QuizSimulator', () => {
       screen.getAllByRole('heading', { name: /^Question \d/ }),
     ).toHaveLength(3);
     expect(screen.queryByRole('button', { name: 'Next Page' })).toBeNull();
+  });
+
+  it('scrolls the quiz when the wheel is used over the question navigator', () => {
+    const scrollBy = vi.fn();
+    HTMLElement.prototype.scrollBy = scrollBy;
+    render(<QuizSimulator quiz={{ ...quiz, templateMode: 'single-page' }} />);
+
+    fireEvent.wheel(screen.getByRole('navigation', { name: 'Questions' }), {
+      deltaY: 150,
+    });
+
+    expect(scrollBy).toHaveBeenCalledWith({ top: 150 });
   });
 
   it('saves answers and restores them after a reload', async () => {

@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 import { describe, it, expect, vi } from 'vitest';
-import { render, screen, within } from '@testing-library/react';
+import { fireEvent, render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { QuestionNavigator } from './QuestionNavigator';
 import type { Question } from '../../types/quiz';
@@ -17,7 +17,7 @@ const question = (number: number, page: number): Question => ({
 
 const questions = [question(1, 1), question(2, 1), question(3, 2)];
 
-const renderNavigator = (onSelect = vi.fn()) =>
+const renderNavigator = (onSelect = vi.fn(), onWheelOverflow = vi.fn()) =>
   render(
     <QuestionNavigator
       questions={questions}
@@ -25,10 +25,29 @@ const renderNavigator = (onSelect = vi.fn()) =>
       answers={{ q1: 'a', q2: '' }}
       flagged={{ q2: true }}
       onSelect={onSelect}
+      onWheelOverflow={onWheelOverflow}
     />,
   );
 
 describe('QuestionNavigator', () => {
+  it('is separated from the quiz by a thin line', () => {
+    renderNavigator();
+    expect(screen.getByRole('navigation', { name: 'Questions' })).toHaveClass(
+      'border-r',
+    );
+  });
+
+  it('passes the mouse wheel on to the quiz when it has nothing to scroll itself', () => {
+    const onWheelOverflow = vi.fn();
+    renderNavigator(vi.fn(), onWheelOverflow);
+
+    fireEvent.wheel(screen.getByRole('navigation', { name: 'Questions' }), {
+      deltaY: 120,
+    });
+
+    expect(onWheelOverflow).toHaveBeenCalledWith(120);
+  });
+
   it('groups the questions by page', () => {
     renderNavigator();
     const nav = screen.getByRole('navigation', { name: 'Questions' });

@@ -433,7 +433,8 @@ export const QuestionRenderer: React.FC<QuestionRendererProps> = ({
                       {reviewMode && (
                         <div
                           aria-hidden="true"
-                          className="flex items-center gap-1 flex-shrink-0"
+                          data-review-marker
+                          className="flex items-center gap-1 flex-shrink-0 w-[42px]"
                         >
                           {correct && (
                             <span

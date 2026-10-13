@@ -116,6 +116,25 @@ describe('QuestionRenderer', () => {
     expect(screen.getByRole('radio', { name: 'git branch' })).toBeChecked();
   });
 
+  // The arrow and check mark only appear next to some options. Every option
+  // reserves the same space for them, so the radios and texts line up.
+  it('reserves the same marker width on every option in review mode', () => {
+    const { container } = render(
+      <QuestionRenderer
+        question={mcq}
+        answer="b"
+        isFlagged={false}
+        onAnswerChange={() => {}}
+        onToggleFlag={() => {}}
+        reviewMode
+      />,
+    );
+
+    const slots = container.querySelectorAll('[data-review-marker]');
+    expect(slots).toHaveLength(mcq.options!.length);
+    for (const slot of slots) expect(slot).toHaveClass('w-[42px]');
+  });
+
   it('renders true/false as radio buttons', () => {
     render(<Harness question={trueFalse} />);
     expect(screen.getByRole('radio', { name: 'True' })).toBeInTheDocument();

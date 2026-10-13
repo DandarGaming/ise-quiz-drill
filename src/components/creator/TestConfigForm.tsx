@@ -1,22 +1,15 @@
 import React, { useState } from 'react';
 import { AlertTriangle } from 'lucide-react';
 import type { TestConfig } from '../../utils/promptBuilder';
+import { fieldLabel, textInput, toNumber } from './formFields';
 
 export interface TestConfigFormProps {
   value: TestConfig;
   onChange: (next: TestConfig) => void;
 }
 
-const fieldLabel =
-  'block text-xs font-bold uppercase tracking-wider text-gray-700 mb-1.5';
-const textInput =
-  'w-full px-3.5 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-[#006fbf] focus:border-transparent outline-none text-gray-900';
 const acChoice =
   'flex items-center gap-2 text-xs font-semibold text-gray-800 cursor-pointer bg-white border border-gray-300 p-2.5 rounded hover:bg-gray-50 transition-colors';
-
-// An empty field reads as 0 while typing; the quiz cannot start until it is fixed
-const toNumber = (text: string, max: number) =>
-  Math.min(max, Math.max(0, Math.floor(Number(text) || 0)));
 
 export const TestConfigForm: React.FC<TestConfigFormProps> = ({
   value,

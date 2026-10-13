@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { AlertTriangle } from 'lucide-react';
 import type { QuestionType } from '../../types/quiz';
 import type { DifficultyMode, PromptOptions } from '../../utils/promptBuilder';
+import { fieldLabel, textInput, toNumber } from './formFields';
 
 export interface PromptOptionsFormProps {
   value: PromptOptions;
@@ -43,18 +44,10 @@ const CHIPS = [
   },
 ];
 
-const fieldLabel =
-  'block text-xs font-bold uppercase tracking-wider text-gray-700 mb-1.5';
-const textInput =
-  'w-full px-3.5 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-[#006fbf] focus:border-transparent outline-none text-gray-900';
 const pctInput =
   'w-full px-3 py-1.5 border border-gray-300 rounded text-xs font-bold focus:ring-2 focus:ring-[#006fbf] outline-none';
 const typeChoice =
   'flex items-center gap-2 text-xs font-semibold text-gray-800 cursor-pointer bg-gray-50 border border-gray-200 p-2.5 rounded-lg hover:bg-gray-100';
-
-// An empty field reads as 0 while typing; the prompt locks until it is fixed
-const toNumber = (text: string, max: number) =>
-  Math.min(max, Math.max(0, Math.floor(Number(text) || 0)));
 
 export const PromptOptionsForm: React.FC<PromptOptionsFormProps> = ({
   value,

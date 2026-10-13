@@ -37,18 +37,20 @@ export const CompiledPromptBox: React.FC<CompiledPromptBoxProps> = ({
     }
   };
 
-  let status = '';
-  if (promptCopied) status = 'Prompt copied';
-  else if (error) status = '';
-  else if (isEmpty) status = 'No prompt yet. Press Update Prompt to build it.';
-  else if (isStale)
-    status =
-      'Options changed since this prompt was built. Press Update Prompt.';
+  const status = promptCopied
+    ? 'Prompt copied'
+    : error
+      ? ''
+      : isEmpty
+        ? 'No prompt yet. Press Update Prompt to build it.'
+        : isStale
+          ? 'Options changed since this prompt was built. Press Update Prompt.'
+          : '';
 
   return (
     <section
       aria-labelledby="compiled-prompt-title"
-      className="bg-gradient-to-r from-slate-900 to-indigo-950 rounded-xl p-6 text-white shadow-md space-y-4"
+      className="bg-slate-900 rounded-xl p-6 text-white shadow-md space-y-4"
     >
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
@@ -68,9 +70,6 @@ export const CompiledPromptBox: React.FC<CompiledPromptBoxProps> = ({
             type="button"
             onClick={onUpdate}
             disabled={!!error || isUpToDate}
-            data-state={
-              error ? 'blocked' : isUpToDate ? 'up-to-date' : 'needs-update'
-            }
             className={`px-5 py-2.5 rounded-lg font-bold text-sm transition-colors flex items-center gap-2 ${
               error
                 ? 'bg-slate-600 text-slate-300 cursor-not-allowed'

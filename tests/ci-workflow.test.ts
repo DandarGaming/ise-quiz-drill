@@ -57,6 +57,33 @@ describe('CI workflow', () => {
   });
 });
 
+describe('container deploy', () => {
+  const workflow = load('container.yml');
+  const deploy = workflow.jobs.deploy;
+  const run = () => (deploy.steps as Step[]).map((s) => s.run ?? '').join('\n');
+
+  it('runs only on main, after the image has been pushed', () => {
+    expect(deploy.needs).toBe('image');
+    expect(deploy.if).toContain("github.event_name == 'push'");
+    expect(deploy.if).toContain("needs.image.result == 'success'");
+  });
+
+  it('never runs two deploys at the same time', () => {
+    expect(deploy.concurrency.group).toBe('deploy-service');
+    expect(deploy.concurrency['cancel-in-progress']).toBe(false);
+  });
+
+  it('deploys the image tagged with this commit, not latest', () => {
+    expect(run()).toContain(
+      'npx cdk deploy ServiceStack -c imageTag="${GITHUB_SHA::7}"',
+    );
+  });
+
+  it('smoke tests the health endpoint of the deployed service', () => {
+    expect(run()).toMatch(/curl -fsS .*\$URL\/api\/health/);
+  });
+});
+
 describe('deploys wait for CI', () => {
   const gated = [
     ['static site deploy', 'deploy-static.yml', 'deploy'],

@@ -56,3 +56,45 @@ jobs:
           for tag in "${GITHUB_SHA::7}" latest; do
             podman push "$REPOSITORY:$GITHUB_SHA" "$REGISTRY/$REPOSITORY:$tag"
           done
+
+  # Roll the ECS Express service onto the image just pushed (ADR-007)
+  deploy:
+    needs: image
+    if: ${{ !cancelled() && github.event_name == 'push' && needs.image.result == 'success' }}
+    runs-on: ubuntu-latest
+    # A second merge waits for the running deploy instead of cancelling it mid-rollout
+    concurrency:
+      group: deploy-service
+      cancel-in-progress: false
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v7
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v7
+        with:
+          node-version: 22
+          cache: 'npm'
+
+      # The CDK app also defines the static site stack, which needs the build output
+      - name: Build the site for CDK synth
+        run: npm ci && npm run build
+
+      - name: Install CDK dependencies
+        run: cd cdk && npm ci
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v6
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: eu-west-1
+
+      - name: Deploy the service
+        run: cd cdk && npx cdk deploy ServiceStack -c imageTag="${GITHUB_SHA::7}" --require-approval never --outputs-file cdk-outputs.json
+
+      - name: Smoke test the service
+        run: |
+          URL=$(jq -r '.ServiceStack.ServiceUrl' cdk/cdk-outputs.json)
+          curl -fsS --retry 10 --retry-delay 6 --retry-all-errors "$URL/api/health"
+          curl -fsS "$URL/" | grep -q "<title>Quiz Drill</title>"

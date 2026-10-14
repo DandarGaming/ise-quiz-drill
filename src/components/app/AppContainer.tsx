@@ -84,15 +84,7 @@ export const AppContainer: React.FC = () => {
         className="bg-[#1e293b] text-white px-8 py-3.5 flex items-center justify-between shadow-md z-40 select-none sticky top-0"
       >
         <div className="flex items-center gap-6">
-          <div className="flex items-center gap-3">
-            <span
-              aria-hidden="true"
-              className="bg-[#006fbf] text-white p-1.5 rounded-lg font-black text-sm"
-            >
-              QD
-            </span>
-            <span className="font-bold text-lg tracking-tight">Quiz Drill</span>
-          </div>
+          <span className="font-bold text-lg tracking-tight">Quiz Drill</span>
 
           <div className="flex items-center gap-1 bg-slate-800/80 p-1 rounded-lg border border-slate-700">
             <button

@@ -113,12 +113,6 @@ export const ResultsReview: React.FC<ResultsReviewProps> = ({
       {/* Top navigation bar */}
       <div className="bg-[#1e293b] text-white px-6 py-3 flex items-center justify-between shadow-md z-40 flex-shrink-0">
         <div className="flex items-center gap-3">
-          <span
-            aria-hidden="true"
-            className="bg-[#006fbf] text-white px-2 py-0.5 rounded font-black text-xs"
-          >
-            QD
-          </span>
           <div>
             <h1 className="font-bold text-base tracking-tight leading-tight">
               {quiz.title}

@@ -19,7 +19,8 @@ the original blog.
   ([ADR-004](docs/adr/ADR-004-scope-tailwind-to-quiz-pages.md))
 - Vitest and Testing Library for tests, ESLint and Prettier for code style
 - AWS CDK for infrastructure: S3 and CloudFront for the static site, ECR for
-  the container image
+  the container image, ECS Express Mode to run it
+  ([ADR-007](docs/adr/ADR-007-run-the-container-on-ecs-express-mode.md))
 
 ## Getting started
 
@@ -77,7 +78,9 @@ failure, `playwright-report/` and `test-results/` hold the report and a trace.
   server image with Podman and smoke tests `/api/health` on pull requests. On
   `main` it also waits for CI, then pushes the image to ECR, tagged with the
   short commit SHA and `latest`
-  ([ADR-005](docs/adr/ADR-005-build-images-with-podman.md)).
+  ([ADR-005](docs/adr/ADR-005-build-images-with-podman.md)). A `deploy` job
+  then rolls the ECS Express service onto that SHA and smoke tests the service
+  URL ([ADR-007](docs/adr/ADR-007-run-the-container-on-ecs-express-mode.md)).
 - How the tests and the gate fit together is in
   [ADR-006](docs/adr/ADR-006-test-layers-and-ci-gate.md).
 
@@ -99,6 +102,20 @@ aws ecr get-login-password --region eu-west-1 |
   podman login --username AWS --password-stdin "$REGISTRY"
 podman push ise-quiz-drill "$REGISTRY/ise-quiz-drill:v2.0.0"
 ```
+
+## Running service
+
+The image runs on ECS Express Mode. The live URL is the `ServiceUrl` output of
+`ServiceStack`; a CloudWatch alarm fires when no task passes `/api/health` for
+three minutes. Roll back by deploying an older commit tag:
+
+```sh
+cd cdk
+npx cdk deploy ServiceStack -c imageTag=<short SHA>
+```
+
+Delete the service when it is no longer needed, since it is billed while it
+runs: `npx cdk destroy ServiceStack ServiceRolesStack`.
 
 ## Documentation
 

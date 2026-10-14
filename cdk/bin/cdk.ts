@@ -2,6 +2,8 @@
 import * as cdk from 'aws-cdk-lib/core';
 import { StaticSiteStack } from '../lib/static-site-stack';
 import { EcrStack } from '../lib/ecr-stack';
+import { ServiceRolesStack } from '../lib/service-roles-stack';
+import { ServiceStack } from '../lib/service-stack';
 
 const app = new cdk.App();
 new StaticSiteStack(app, 'CdkStack', {
@@ -22,4 +24,15 @@ new StaticSiteStack(app, 'CdkStack', {
 
 new EcrStack(app, 'EcrStack', {
   env: { account: '468204079455', region: 'eu-west-1' },
+});
+
+const roles = new ServiceRolesStack(app, 'ServiceRolesStack', {
+  env: { account: '468204079455', region: 'eu-west-1' },
+});
+
+// CI passes the short commit SHA: cdk deploy ServiceStack -c imageTag=<sha>
+new ServiceStack(app, 'ServiceStack', {
+  env: { account: '468204079455', region: 'eu-west-1' },
+  imageTag: app.node.tryGetContext('imageTag') ?? 'latest',
+  roles,
 });

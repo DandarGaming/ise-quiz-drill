@@ -17,6 +17,8 @@ As a <who>, I want <what>, so that <why>.
 - [ ] Given <starting situation>, when <user action>, then <result>
 - [ ] Given <...>, when <...>, then <...> and <anything more>
 
+<!-- Every issue also has to meet docs/definition-of-done.md. -->
+
 ## Notes
 
 Links, screenshots, implementation ideas (optional).

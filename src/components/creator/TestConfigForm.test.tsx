@@ -27,33 +27,33 @@ const last = (fn: ReturnType<typeof vi.fn>) =>
   fn.mock.lastCall?.[0] as TestConfig;
 
 describe('TestConfigForm', () => {
-  it('asks for a required title, without an example or an optional tag', async () => {
+  it('lets the title be edited and says it can stay empty', async () => {
     const onChange = vi.fn();
     render(<Harness onChange={onChange} />);
     const title = screen.getByLabelText('Test Title');
 
-    expect(title).toBeRequired();
-    expect(title).not.toHaveAttribute('placeholder');
-    expect(screen.queryByText(/optional/i)).toBeNull();
+    expect(title).not.toBeRequired();
+    expect(
+      screen.getByText('Leave empty to use the title from the JSON.'),
+    ).toBeInTheDocument();
 
     await userEvent.type(title, 'Midterm');
     expect(last(onChange).title).toBe('Midterm');
   });
 
-  it('flags an empty title with one word once the field is left', async () => {
-    render(<Harness />);
-    const title = screen.getByLabelText('Test Title');
-    expect(screen.queryByText('Required')).toBeNull();
+  it('shows the title found in the JSON as the default', () => {
+    render(
+      <TestConfigForm
+        value={defaultTestConfig}
+        onChange={() => {}}
+        titleFallback="DevOps Basics Practice"
+      />,
+    );
 
-    await userEvent.click(title);
-    await userEvent.tab();
-
-    expect(screen.getByText('Required')).toBeInTheDocument();
-    expect(title).toBeInvalid();
-
-    await userEvent.type(title, 'Midterm');
-    expect(screen.queryByText('Required')).toBeNull();
-    expect(title).toBeValid();
+    expect(screen.getByLabelText('Test Title')).toHaveAttribute(
+      'placeholder',
+      'DevOps Basics Practice',
+    );
   });
 
   it('edits the time limit', async () => {

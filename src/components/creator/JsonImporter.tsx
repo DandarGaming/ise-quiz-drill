@@ -1,31 +1,26 @@
-import React, { useEffect, useMemo, useState } from 'react';
-import { AlertCircle, Check, Copy, Info, Play, Upload } from 'lucide-react';
-import type { QuizConfig } from '../../types/quiz';
-import { parseQuizJson, type ImportSettings } from '../../utils/quizSchema';
+import React, { useEffect, useState } from 'react';
+import { AlertCircle, Check, Copy, Info, Upload } from 'lucide-react';
+import type { ParseResult } from '../../utils/quizSchema';
 
+// The creator owns the text and its parse result, so both survive a change of
+// step; Start lives in the creator too, below the settings.
 export interface JsonImporterProps {
-  settings: ImportSettings;
-  onStart: (quiz: QuizConfig) => void;
-  // Why the quiz cannot start yet, for example a missing title
-  blockedReason?: string | null;
+  value: string;
+  onChange: (text: string) => void;
+  result: ParseResult | null;
 }
 
 const fixRequest = (error: string) =>
   `The JSON response you generated has a validation error:\n"${error}"\n\nPlease fix this syntax error and output the complete valid JSON payload again.`;
 
 export const JsonImporter: React.FC<JsonImporterProps> = ({
-  settings,
-  onStart,
-  blockedReason = null,
+  value,
+  onChange,
+  result,
 }) => {
-  const [jsonInput, setJsonInput] = useState('');
   const [isDragOver, setIsDragOver] = useState(false);
   const [errorCopied, setErrorCopied] = useState(false);
 
-  const result = useMemo(
-    () => (jsonInput.trim() ? parseQuizJson(jsonInput, settings) : null),
-    [jsonInput, settings],
-  );
   const validationError = result && !result.ok ? result.error : null;
   const parsedQuiz = result?.ok ? result.quiz : null;
 
@@ -36,7 +31,7 @@ export const JsonImporter: React.FC<JsonImporterProps> = ({
   }, [errorCopied]);
 
   const handleFileUpload = async (file: File | undefined) => {
-    if (file) setJsonInput(await file.text());
+    if (file) onChange(await file.text());
   };
 
   const handleDrop = (e: React.DragEvent) => {
@@ -99,8 +94,8 @@ export const JsonImporter: React.FC<JsonImporterProps> = ({
       <div>
         <textarea
           aria-label="Quiz JSON"
-          value={jsonInput}
-          onChange={(e) => setJsonInput(e.target.value)}
+          value={value}
+          onChange={(e) => onChange(e.target.value)}
           aria-invalid={validationError ? true : undefined}
           aria-describedby={validationError ? 'json-import-error' : undefined}
           spellCheck={false}
@@ -174,7 +169,7 @@ export const JsonImporter: React.FC<JsonImporterProps> = ({
       {parsedQuiz && (
         <div
           role="status"
-          className="bg-white border border-gray-300 text-gray-900 px-5 py-4 rounded-xl flex items-center justify-between"
+          className="bg-white border border-gray-300 text-gray-900 px-5 py-4 rounded-xl"
         >
           <div className="space-y-1">
             <div className="flex items-center gap-2">
@@ -203,27 +198,6 @@ export const JsonImporter: React.FC<JsonImporterProps> = ({
                 ? '1 Question / Page'
                 : 'All Questions on One Page'}
             </p>
-          </div>
-
-          <div className="flex flex-col items-end gap-1.5">
-            <button
-              type="button"
-              onClick={() => onStart(parsedQuiz)}
-              disabled={!!blockedReason}
-              className={`px-8 py-3 rounded-lg font-bold text-base transition-all flex items-center gap-2 ${
-                blockedReason
-                  ? 'bg-gray-200 text-gray-500 cursor-not-allowed'
-                  : 'bg-[#006fbf] hover:bg-[#005694] text-white shadow-md hover:shadow-lg cursor-pointer transform hover:-translate-y-0.5 active:translate-y-0'
-              }`}
-            >
-              <Play aria-hidden="true" className="w-5 h-5 fill-current" /> Start
-              Quiz Simulation Now
-            </button>
-            {blockedReason && (
-              <span className="text-xs font-semibold text-amber-700">
-                {blockedReason}
-              </span>
-            )}
           </div>
         </div>
       )}

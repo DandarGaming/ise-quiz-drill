@@ -16,12 +16,15 @@ afterEach(() => {
 });
 
 const mainNav = () => screen.getByRole('navigation', { name: 'Main' });
+const toImportStep = (user: ReturnType<typeof userEvent.setup>) =>
+  user.click(screen.getByRole('button', { name: 'I already have JSON' }));
 const paste = (text: string) =>
   fireEvent.change(screen.getByLabelText('Quiz JSON'), {
     target: { value: text },
   });
 
 async function startQuiz(user = userEvent.setup(), json = sampleQuiz) {
+  await toImportStep(user);
   await user.type(screen.getByLabelText(/Test Title/), 'Integration quiz');
   paste(JSON.stringify(json));
   await user.click(
@@ -133,6 +136,7 @@ describe('quiz journey', () => {
   it('shows every question on one page in single-page mode', async () => {
     const user = userEvent.setup();
     render(<AppContainer />);
+    await toImportStep(user);
     await user.click(
       screen.getByRole('button', { name: 'Scroll Form (All Questions)' }),
     );
@@ -147,6 +151,9 @@ describe('quiz journey', () => {
   it('submits by itself when the time limit runs out', async () => {
     vi.useFakeTimers();
     render(<AppContainer />);
+    fireEvent.click(
+      screen.getByRole('button', { name: 'I already have JSON' }),
+    );
     fireEvent.change(screen.getByLabelText('Time Limit (Minutes)'), {
       target: { value: '1' },
     });
@@ -171,16 +178,31 @@ describe('quiz journey', () => {
 });
 
 describe('importing quizzes', () => {
+  it('starts a quiz from ready JSON without visiting step 1 or typing a title', async () => {
+    const user = userEvent.setup();
+    render(<AppContainer />);
+    await toImportStep(user);
+    paste(JSON.stringify(sampleQuiz));
+
+    await user.click(
+      screen.getByRole('button', { name: 'Start Quiz Simulation Now' }),
+    );
+
+    expect(screen.getByRole('timer')).toBeInTheDocument();
+    expect(loadSavedQuizzes(localStorage)[0].title).toBe(sampleQuiz.title);
+  });
+
   it('explains a broken JSON and starts once it is fixed', async () => {
     const user = userEvent.setup();
     render(<AppContainer />);
+    await toImportStep(user);
     await user.type(screen.getByLabelText(/Test Title/), 'Broken then fixed');
 
     paste('{"title": "Oops",');
     expect(screen.getByRole('alert')).toHaveTextContent(/not valid JSON/);
     expect(
-      screen.queryByRole('button', { name: 'Start Quiz Simulation Now' }),
-    ).toBeNull();
+      screen.getByRole('button', { name: 'Start Quiz Simulation Now' }),
+    ).toBeDisabled();
     expect(
       screen.getByRole('button', { name: 'Copy Error for AI Fix' }),
     ).toBeInTheDocument();
@@ -193,8 +215,9 @@ describe('importing quizzes', () => {
     expect(screen.getByRole('timer')).toBeInTheDocument();
   });
 
-  it('rejects a quiz without questions', () => {
+  it('rejects a quiz without questions', async () => {
     render(<AppContainer />);
+    await toImportStep(userEvent.setup());
 
     paste(JSON.stringify({ ...sampleQuiz, questions: [] }));
 

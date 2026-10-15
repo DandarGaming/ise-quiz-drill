@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { Library, Wrench } from 'lucide-react';
 import type { QuizAttemptRecord, QuizConfig } from '../../types/quiz';
+import { quizStarted, track } from '../../utils/analytics';
 import { loadSavedQuizzes, saveQuiz } from '../../utils/attemptStorage';
 import { browserStorage, safely } from '../../utils/browserStorage';
 import { MockTestCreator } from '../creator/MockTestCreator';
@@ -26,6 +27,8 @@ export const AppContainer: React.FC = () => {
   );
   const [savedCount, setSavedCount] = useState(0);
 
+  useEffect(() => track({ event: 'app_opened' }), []);
+
   // Refresh the saved quiz count whenever the view changes
   useEffect(() => {
     setSavedCount(
@@ -34,6 +37,7 @@ export const AppContainer: React.FC = () => {
   }, [viewMode, storage]);
 
   const handleStartQuiz = (quiz: QuizConfig) => {
+    track(quizStarted(quiz));
     setReviewRecord(null);
     setCurrentQuiz(quiz);
     setViewMode('simulator');

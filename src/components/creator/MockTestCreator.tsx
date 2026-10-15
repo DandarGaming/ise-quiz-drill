@@ -1,6 +1,7 @@
-import React, { useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { ArrowRight, MessageSquareText, Play, Settings } from 'lucide-react';
 import type { QuizConfig } from '../../types/quiz';
+import { track } from '../../utils/analytics';
 import {
   buildPrompt,
   defaultPromptOptions,
@@ -78,6 +79,14 @@ export const MockTestCreator: React.FC<MockTestCreatorProps> = ({
     () => (jsonText.trim() ? parseQuizJson(jsonText, settings) : null),
     [jsonText, settings],
   );
+
+  // Once per change between valid and invalid JSON, not once per keystroke
+  const importValid = result ? result.ok : null;
+  useEffect(() => {
+    if (importValid !== null) {
+      track({ event: 'quiz_imported', props: { valid: importValid } });
+    }
+  }, [importValid]);
 
   const quiz =
     result?.ok === true
@@ -171,6 +180,12 @@ export const MockTestCreator: React.FC<MockTestCreatorProps> = ({
             isStale={isStale}
             errors={optionsErrors}
             onUpdate={handleUpdate}
+            onCopied={() =>
+              track({
+                event: 'prompt_copied',
+                props: { questionCount: options.questionCount },
+              })
+            }
           />
 
           <div className="border-t border-gray-100 pt-4 flex justify-end">

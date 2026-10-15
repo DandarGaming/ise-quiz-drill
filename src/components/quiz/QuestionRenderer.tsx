@@ -447,9 +447,11 @@ export const QuestionRenderer: React.FC<QuestionRendererProps> = ({
                       </div>
 
                       <span
-                        className={`text-lg leading-snug font-normal text-gray-900 ${
-                          isStruck ? 'line-through text-gray-500' : ''
-                        }`}
+                        className={`text-lg leading-snug font-normal ${
+                          selected && !reviewMode
+                            ? 'text-[#1f2937]'
+                            : 'text-gray-900'
+                        } ${isStruck ? 'line-through text-gray-500' : ''}`}
                       >
                         {option.text}
                       </span>

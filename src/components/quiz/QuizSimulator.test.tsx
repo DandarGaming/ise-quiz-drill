@@ -66,12 +66,21 @@ describe('QuizSimulator', () => {
     expect(
       screen.getAllByRole('button', { name: 'Previous Page' })[0],
     ).toBeDisabled();
+    expect(screen.getByRole('button', { name: 'Submit Quiz' })).toHaveClass(
+      'text-[#1f2937]',
+    );
+    expect(
+      screen.queryByRole('group', { name: 'Appearance' }),
+    ).not.toBeInTheDocument();
 
     await u.click(screen.getAllByRole('button', { name: 'Next Page' })[0]);
 
     expect(
       screen.getByRole('heading', { name: /^Question 2/ }),
     ).toBeInTheDocument();
+    expect(
+      screen.getAllByRole('button', { name: 'Previous Page' })[0],
+    ).toHaveClass('text-[#1f2937]');
     expect(pageLabel()).toHaveTextContent('Page 2 of 3');
   });
 

@@ -7,7 +7,10 @@ import { loadSavedQuizzes } from '../../utils/attemptStorage';
 import { sampleQuiz } from '../../data/sampleQuiz';
 
 beforeEach(() => localStorage.clear());
-afterEach(() => vi.restoreAllMocks());
+afterEach(() => {
+  vi.restoreAllMocks();
+  vi.unstubAllGlobals();
+});
 
 const mainNav = () => screen.getByRole('navigation', { name: 'Main' });
 
@@ -45,12 +48,57 @@ describe('AppContainer', () => {
     ).toHaveAttribute('aria-current', 'page');
   });
 
+  it('changes and remembers the selected appearance', async () => {
+    render(<AppContainer />);
+
+    await userEvent.click(screen.getByRole('button', { name: 'Dark mode' }));
+
+    expect(document.documentElement).toHaveClass('dark');
+    expect(localStorage.getItem('quiz-drill-theme')).toBe('dark');
+    expect(screen.getByRole('button', { name: 'Dark mode' })).toHaveAttribute(
+      'aria-pressed',
+      'true',
+    );
+  });
+
+  it('restores the saved appearance when the app opens', () => {
+    localStorage.setItem('quiz-drill-theme', 'dark');
+
+    render(<AppContainer />);
+
+    expect(document.documentElement).toHaveClass('dark');
+    expect(screen.getByRole('button', { name: 'Dark mode' })).toHaveAttribute(
+      'aria-pressed',
+      'true',
+    );
+  });
+
+  it('uses the operating system appearance when no preference is saved', () => {
+    vi.stubGlobal('matchMedia', vi.fn().mockReturnValue({ matches: true }));
+
+    render(<AppContainer />);
+
+    expect(document.documentElement).toHaveClass('dark');
+    expect(localStorage.getItem('quiz-drill-theme')).toBe('dark');
+  });
+
+  it('prefers a saved appearance over the operating system setting', () => {
+    localStorage.setItem('quiz-drill-theme', 'light');
+    vi.stubGlobal('matchMedia', vi.fn().mockReturnValue({ matches: true }));
+
+    render(<AppContainer />);
+
+    expect(document.documentElement).not.toHaveClass('dark');
+    expect(localStorage.getItem('quiz-drill-theme')).toBe('light');
+  });
+
   it('saves a quiz started from the creator and runs it without the navigation', async () => {
     render(<AppContainer />);
 
     await startImportedQuiz();
 
     expect(screen.getByRole('timer')).toBeInTheDocument();
+    expect(screen.queryByRole('group', { name: 'Appearance' })).toBeNull();
     expect(screen.queryByRole('navigation', { name: 'Main' })).toBeNull();
     expect(loadSavedQuizzes(localStorage).map((q) => q.title)).toEqual([
       'DevOps Basics Practice',

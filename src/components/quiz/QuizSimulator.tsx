@@ -71,7 +71,7 @@ const PageBar: React.FC<{
         className={`px-7 py-3 text-base font-bold rounded transition-colors ${
           page === 1
             ? 'bg-[#e3e8ee] text-[#556370] cursor-not-allowed'
-            : 'bg-[#e3e8ee] text-gray-900 hover:bg-gray-300'
+            : 'bg-[#e3e8ee] text-[#1f2937] hover:bg-gray-300'
         }`}
       >
         Previous Page
@@ -501,7 +501,7 @@ export const QuizSimulator: React.FC<QuizSimulatorProps> = ({
                       className={`px-7 py-3 font-bold rounded text-base transition-colors cursor-pointer ${
                         isAllAnswered
                           ? 'bg-[#006fbf] hover:bg-[#005694] text-white shadow-sm'
-                          : 'bg-[#e3e8ee] hover:bg-[#d5dde6] text-gray-900'
+                          : 'bg-[#e3e8ee] hover:bg-[#d5dde6] text-[#1f2937]'
                       }`}
                     >
                       Submit Quiz

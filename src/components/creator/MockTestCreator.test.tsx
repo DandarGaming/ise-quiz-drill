@@ -4,6 +4,7 @@ import { fireEvent, render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { MockTestCreator } from './MockTestCreator';
 import { sampleQuiz } from '../../data/sampleQuiz';
+import { presets } from '../../utils/presets';
 
 const promptBox = () =>
   screen.getByRole('region', { name: 'Compiled AI System Prompt' });
@@ -250,5 +251,99 @@ describe('MockTestCreator', () => {
     await userEvent.type(time, '0');
 
     expect(startButton()).toBeDisabled();
+  });
+
+  describe('presets', () => {
+    const preset = presets[0];
+    // Step 1 has another status line, in the prompt box
+    const presetStatus = () =>
+      within(screen.getByRole('group', { name: 'Exam preset' })).getByRole(
+        'status',
+      );
+    const pick = async (id: string) => {
+      await userEvent.selectOptions(
+        screen.getByLabelText('Exam preset (optional)'),
+        id,
+      );
+      await userEvent.click(
+        screen.getByRole('button', { name: 'Apply preset' }),
+      );
+    };
+
+    it('fills the prompt options from a preset in step 1 and keeps them editable', async () => {
+      render(<MockTestCreator onStart={() => {}} />);
+      await pick(preset.id);
+
+      const count = screen.getByLabelText('Number of Questions');
+      expect(count).toHaveValue(preset.prompt.questionCount);
+      expect(presetStatus()).toHaveTextContent(
+        `Applied ${preset.name} to the prompt options.`,
+      );
+
+      await userEvent.clear(count);
+      await userEvent.type(count, '7');
+      expect(count).toHaveValue(7);
+    });
+
+    it('fills the test settings from a preset in step 2 without a visit to step 1', async () => {
+      render(<MockTestCreator onStart={() => {}} />);
+      await toStep2();
+      await pick(preset.id);
+
+      expect(screen.getByLabelText('Test Title')).toHaveValue(
+        preset.config.title,
+      );
+      expect(screen.getByLabelText('Time Limit (Minutes)')).toHaveValue(
+        preset.config.timeLimitMinutes,
+      );
+      expect(presetStatus()).toHaveTextContent(
+        `Applied ${preset.name} to the test settings.`,
+      );
+    });
+
+    it('keeps the two steps apart: a preset in step 2 leaves step 1 alone', async () => {
+      render(<MockTestCreator onStart={() => {}} />);
+      await toStep2();
+      await pick(preset.id);
+      await toStep1();
+
+      expect(screen.getByLabelText('Number of Questions')).not.toHaveValue(
+        preset.prompt.questionCount,
+      );
+    });
+
+    it('asks before a preset replaces a setting typed by hand', async () => {
+      render(<MockTestCreator onStart={() => {}} />);
+      await toStep2();
+      const title = screen.getByLabelText('Test Title');
+      await userEvent.type(title, 'My own title');
+
+      await pick(preset.id);
+      expect(
+        screen.getByText(`Replace your changes with ${preset.name}?`),
+      ).toBeVisible();
+      await userEvent.click(screen.getByRole('button', { name: 'Cancel' }));
+      expect(title).toHaveValue('My own title');
+
+      await pick(preset.id);
+      await userEvent.click(screen.getByRole('button', { name: 'Replace' }));
+      expect(title).toHaveValue(preset.config.title);
+    });
+
+    it('resets only the step it is in', async () => {
+      render(<MockTestCreator onStart={() => {}} />);
+      await pick(preset.id);
+      await toStep2();
+      await pick(preset.id);
+      await userEvent.click(
+        screen.getByRole('button', { name: 'Reset to defaults' }),
+      );
+      expect(screen.getByLabelText('Test Title')).toHaveValue('');
+
+      await toStep1();
+      expect(screen.getByLabelText('Number of Questions')).toHaveValue(
+        preset.prompt.questionCount,
+      );
+    });
   });
 });

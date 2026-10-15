@@ -1,0 +1,73 @@
+{
+  "_help": {
+    "how_to_use": "Fill in the values below. To add a preset, copy one block in 'presets' and change its id and name. Use null for a field you want left at its default.",
+    "id": "lowercase, no accents, words joined with hyphens, unique (for example: devops)",
+    "name": "label shown on the preset button",
+    "prompt.questionCount": "integer from 1 to 50 - eg. 1 ",
+    "prompt.difficulty": "one of: auto | easy | medium | hard | custom - eg. custom",
+    "prompt.mix": "only used when difficulty is custom: easy + medium + hard = 100. Otherwise null - eg. check devops code below",
+    "prompt.types": "choose from: mcq | multi-select | true-false | short-answer | multi-blank (at least one)",
+    "prompt.topics": "topics to focus on, written as you would send them to the AI",
+    "prompt.notes": "exam-specific requirements, sent to the AI as written (for example how to write the questions)",
+    "config.title": "pre-filled quiz title; use an empty string to let the user type their own",
+    "config.timeLimitMinutes": "integer from 1 to 180",
+    "config.templateMode": "paginated (one page at a time) | single-page (everything on one page)",
+    "config.antiCheat": "enabled switches the whole group on or off; tabLock, uiRestrictions and fullscreenLock are true or false"
+  },
+  "presets": [
+    {
+      "id": "devops",
+      "name": "DevOps Weekly Quiz",
+      "prompt": {
+        "questionCount": 10,
+        "difficulty": "custom",
+        "mix": {
+          "easy": 30,
+          "medium": 50,
+          "hard": 20
+        },
+        "types": ["multi-select"],
+        "topics": "Cover all topics listed in provided documentation (slides, notes, etc)",
+        "notes": "Write everything in English. Every question is multi-select, even when it has only one correct answer (then correctAnswer is an array with one id), and the prompt must not say how many answers are correct. About 40-50% of the questions have one correct answer and about 20-30% have two correct answers. For the remaining questions, pick the number of correct answers yourself and vary it randomly between questions. At least two of the medium or hard questions must include a code snippet. Test strict, exact rules: precise syntax and flags, default values, ordering and precedence, and what a tool does or refuses to do in a specific situation. Every correct answer must be unambiguously right according to the provided material, and every wrong option must break exactly one specific rule. Focus on tricky edge cases, subtle traps and common student misunderstandings, but the trap must come from the concept, never from vague wording. Frame questions as real-world scenarios or architecture design problems."
+      },
+      "config": {
+        "title": "DevOps Quiz",
+        "timeLimitMinutes": 15,
+        "templateMode": "paginated",
+        "antiCheat": {
+          "enabled": true,
+          "tabLock": true,
+          "uiRestrictions": true,
+          "fullscreenLock": true
+        }
+      }
+    },
+    {
+      "id": "itg",
+      "name": "ITG Final (Java)",
+      "prompt": {
+        "questionCount": 20,
+        "difficulty": "custom",
+        "mix": {
+          "easy": 30,
+          "medium": 50,
+          "hard": 20
+        },
+        "types": ["mcq"],
+        "topics": "Cover all Java topics listed in the provided documentation (slides, notes, etc)",
+        "notes": "Write everything in English. Every question gives a Java code snippet and asks for the exact result: the printed output, the final value, or the exact compile-time or runtime error. Every question has exactly 5 options (a to e) and exactly one correct option. Each wrong option must be the result a student would get by making one specific mistake. Set codeSnippet and codeLanguage (java) on every question. The snippets must be longer and trickier for medium and hard questions. Test strict, exact language rules: evaluation order, type conversion and promotion, overload and override resolution, string and number formatting, exception behaviour. The result must be fully deterministic and verifiable by tracing the code, with exactly one correct result. Focus on tricky edge cases, subtle traps and common student misunderstandings, but the trap must come from the language rules, never from vague wording."
+      },
+      "config": {
+        "title": "Java MCQ",
+        "timeLimitMinutes": 60,
+        "templateMode": "single-page",
+        "antiCheat": {
+          "enabled": true,
+          "tabLock": true,
+          "uiRestrictions": true,
+          "fullscreenLock": true
+        }
+      }
+    }
+  ]
+}

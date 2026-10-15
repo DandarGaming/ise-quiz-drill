@@ -25,6 +25,23 @@ test('opens on the creator', async ({ page }) => {
   await expect(page.getByLabel('Quiz JSON')).toHaveCount(0);
 });
 
+test('fills the prompt options from a preset in the built app', async ({
+  page,
+}) => {
+  await page.goto('/');
+  await page.getByLabel('Exam preset (optional)').selectOption('devops');
+  await page.getByRole('button', { name: 'Apply preset' }).click();
+
+  await expect(page.getByLabel('Number of Questions')).toHaveValue('10');
+  await expect(
+    page.getByText('Applied DevOps Weekly Quiz to the prompt options.'),
+  ).toBeVisible();
+
+  // The user can still change what the preset filled in
+  await page.getByLabel('Number of Questions').fill('7');
+  await expect(page.getByLabel('Number of Questions')).toHaveValue('7');
+});
+
 test('warns about empty required options once the user moves below them, without losing the click', async ({
   page,
 }) => {

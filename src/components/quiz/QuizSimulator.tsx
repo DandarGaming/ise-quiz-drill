@@ -25,6 +25,7 @@ import {
   safely,
   type KeyValueStore,
 } from '../../utils/browserStorage';
+import type { Theme } from '../app/AppearanceSettings';
 import { HeaderBar } from './HeaderBar';
 import { QuestionNavigator } from './QuestionNavigator';
 import { QuestionRenderer } from './QuestionRenderer';
@@ -35,6 +36,8 @@ export interface QuizSimulatorProps {
   quiz: QuizConfig;
   onExit?: () => void;
   storage?: KeyValueStore;
+  theme?: Theme;
+  onThemeChange?: (theme: Theme) => void;
 }
 
 // Warn when this many seconds are left, largest first
@@ -129,6 +132,8 @@ export const QuizSimulator: React.FC<QuizSimulatorProps> = ({
   quiz,
   onExit,
   storage = browserStorage(),
+  theme,
+  onThemeChange,
 }) => {
   const { questions, totalPages } = useMemo(() => paginate(quiz), [quiz]);
   // An attempt lives in memory only: a new start or a reload is a new attempt
@@ -436,6 +441,8 @@ export const QuizSimulator: React.FC<QuizSimulatorProps> = ({
           totalSeconds={quiz.timeLimitMinutes * 60}
           isWarning={isTimerBlinking}
           onExit={handleExit}
+          theme={theme}
+          onThemeChange={onThemeChange}
         />
 
         <div className="flex flex-1 overflow-hidden min-h-0">

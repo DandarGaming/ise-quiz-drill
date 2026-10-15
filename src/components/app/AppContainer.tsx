@@ -4,12 +4,21 @@ import type { QuizAttemptRecord, QuizConfig } from '../../types/quiz';
 import { quizStarted, track } from '../../utils/analytics';
 import { loadSavedQuizzes, saveQuiz } from '../../utils/attemptStorage';
 import { browserStorage, safely } from '../../utils/browserStorage';
+import { AppearanceSettings, type Theme } from './AppearanceSettings';
 import { MockTestCreator } from '../creator/MockTestCreator';
 import { QuizHistory } from '../history/QuizHistory';
 import { QuizSimulator } from '../quiz/QuizSimulator';
 import { ResultsReview } from '../quiz/ResultsReview';
 
 type ViewMode = 'simulator' | 'creator' | 'history';
+const THEME_STORAGE_KEY = 'quiz-drill-theme';
+
+const loadTheme = (): Theme => {
+  const storage = browserStorage();
+  return storage && safely(() => storage.getItem(THEME_STORAGE_KEY)) === 'dark'
+    ? 'dark'
+    : 'light';
+};
 
 const navButton = (active: boolean) =>
   `px-3 py-1.5 rounded-md text-xs font-bold transition-all cursor-pointer flex items-center gap-2 ${
@@ -20,6 +29,7 @@ const navButton = (active: boolean) =>
 
 export const AppContainer: React.FC = () => {
   const storage = browserStorage();
+  const [theme, setTheme] = useState<Theme>(loadTheme);
   const [viewMode, setViewMode] = useState<ViewMode>('creator');
   const [currentQuiz, setCurrentQuiz] = useState<QuizConfig | null>(null);
   const [reviewRecord, setReviewRecord] = useState<QuizAttemptRecord | null>(
@@ -28,6 +38,11 @@ export const AppContainer: React.FC = () => {
   const [savedCount, setSavedCount] = useState(0);
 
   useEffect(() => track({ event: 'app_opened' }), []);
+
+  useEffect(() => {
+    document.documentElement.classList.toggle('dark', theme === 'dark');
+    if (storage) safely(() => storage.setItem(THEME_STORAGE_KEY, theme));
+  }, [storage, theme]);
 
   // Refresh the saved quiz count whenever the view changes
   useEffect(() => {
@@ -64,6 +79,8 @@ export const AppContainer: React.FC = () => {
           eventLog={reviewRecord.eventLog}
           onRetake={() => handleStartQuiz(reviewRecord.quizSnapshot)}
           onExit={() => showView('history')}
+          theme={theme}
+          onThemeChange={setTheme}
         />
       </div>
     );
@@ -76,6 +93,8 @@ export const AppContainer: React.FC = () => {
           key={currentQuiz.id}
           quiz={currentQuiz}
           onExit={() => showView('creator')}
+          theme={theme}
+          onThemeChange={setTheme}
         />
       </div>
     );
@@ -122,6 +141,7 @@ export const AppContainer: React.FC = () => {
               )}
             </button>
           </div>
+          <AppearanceSettings theme={theme} onChange={setTheme} darkHeader />
         </div>
       </nav>
 

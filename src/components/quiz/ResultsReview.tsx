@@ -13,6 +13,7 @@ import {
 import type { QuizConfig, QuizEvent } from '../../types/quiz';
 import type { Answer } from '../../utils/answers';
 import { gradeQuiz } from '../../utils/grading';
+import { AppearanceSettings, type Theme } from '../app/AppearanceSettings';
 import { QuestionRenderer } from './QuestionRenderer';
 
 export interface ResultsReviewProps {
@@ -22,6 +23,8 @@ export interface ResultsReviewProps {
   eventLog?: QuizEvent[];
   onRetake: () => void;
   onExit?: () => void;
+  theme?: Theme;
+  onThemeChange?: (theme: Theme) => void;
 }
 
 export type FilterMode = 'incorrect' | 'correct' | 'all';
@@ -69,6 +72,8 @@ export const ResultsReview: React.FC<ResultsReviewProps> = ({
   eventLog = [],
   onRetake,
   onExit,
+  theme,
+  onThemeChange,
 }) => {
   const [filterMode, setFilterMode] = useState<FilterMode>('incorrect');
 
@@ -124,6 +129,13 @@ export const ResultsReview: React.FC<ResultsReviewProps> = ({
         </div>
 
         <div className="flex items-center gap-3">
+          {theme && onThemeChange && (
+            <AppearanceSettings
+              theme={theme}
+              onChange={onThemeChange}
+              darkHeader
+            />
+          )}
           <button
             type="button"
             onClick={onRetake}

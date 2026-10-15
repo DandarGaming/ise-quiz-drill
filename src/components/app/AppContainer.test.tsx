@@ -45,6 +45,31 @@ describe('AppContainer', () => {
     ).toHaveAttribute('aria-current', 'page');
   });
 
+  it('changes and remembers the selected appearance', async () => {
+    render(<AppContainer />);
+
+    await userEvent.click(screen.getByRole('button', { name: 'Dark mode' }));
+
+    expect(document.documentElement).toHaveClass('dark');
+    expect(localStorage.getItem('quiz-drill-theme')).toBe('dark');
+    expect(screen.getByRole('button', { name: 'Dark mode' })).toHaveAttribute(
+      'aria-pressed',
+      'true',
+    );
+  });
+
+  it('restores the saved appearance when the app opens', () => {
+    localStorage.setItem('quiz-drill-theme', 'dark');
+
+    render(<AppContainer />);
+
+    expect(document.documentElement).toHaveClass('dark');
+    expect(screen.getByRole('button', { name: 'Dark mode' })).toHaveAttribute(
+      'aria-pressed',
+      'true',
+    );
+  });
+
   it('saves a quiz started from the creator and runs it without the navigation', async () => {
     render(<AppContainer />);
 

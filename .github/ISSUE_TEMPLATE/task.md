@@ -10,17 +10,12 @@ title: 'type: '
 
 As a <who>, I want <what>, so that <why>.
 
-- Given <the starting situation>
-- When <the user does something>
-- Then <what they see or get>
-- And <anything more>
-
-<!-- Work with no user (CI, dependencies) can use plain sentences instead. -->
-
 ## Acceptance criteria
 
-- [ ] Criterion 1 (must be verifiable)
-- [ ] Criterion 2
+<!-- One scenario per box. Plain checks (tests pass, docs) are fine too. Work with no user (CI, dependencies) can use plain sentences. Any part can be extended with "and", "or" or "but", for example: given X and Y, when A or B, then C and D but not E. -->
+
+- [ ] Given <starting situation>, when <user action>, then <result>
+- [ ] Given <...>, when <...>, then <...> and <anything more>
 
 ## Notes
 

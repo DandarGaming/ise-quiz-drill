@@ -8,6 +8,7 @@ export type DifficultyMode = 'auto' | 'easy' | 'medium' | 'hard' | 'custom';
 
 // Settings the app applies itself; none of them is sent to the AI
 export interface TestConfig {
+  // Optional: when empty the quiz keeps the title written in its JSON
   title: string;
   timeLimitMinutes: number;
   templateMode: TemplateMode;
@@ -37,12 +38,13 @@ export const defaultTestConfig: TestConfig = {
   },
 };
 
+// Only the difficulty has a default; the rest must be chosen before building
 export const defaultPromptOptions: PromptOptions = {
-  questionCount: 10,
+  questionCount: 0,
   difficulty: 'auto',
   mix: { easy: 30, medium: 50, hard: 20 },
   topics: '',
-  types: ['mcq', 'multi-select', 'true-false', 'short-answer'],
+  types: [],
   notes: '',
 };
 
@@ -84,24 +86,27 @@ function difficultyRules({ difficulty, mix }: PromptOptions): string {
 }
 
 // Returns why the prompt cannot be used yet, or null when it is ready
-export function validatePromptOptions(options: PromptOptions): string | null {
+// Everything still wrong with the options, so all of it can be shown at once
+export function validatePromptOptions(options: PromptOptions): string[] {
+  const errors: string[] = [];
   if (options.questionCount < 1 || options.questionCount > 50) {
-    return 'Choose between 1 and 50 questions.';
+    errors.push('Choose between 1 and 50 questions.');
   }
-  if (options.types.length === 0) return 'Select at least one question type.';
+  if (options.types.length === 0) {
+    errors.push('Select at least one question type.');
+  }
   if (options.difficulty === 'custom') {
     const { easy, medium, hard } = options.mix;
     const total = easy + medium + hard;
     if (total !== 100) {
-      return `The difficulty mix must add up to 100% (now ${total}%).`;
+      errors.push(`The difficulty mix must add up to 100% (now ${total}%).`);
     }
   }
-  return null;
+  return errors;
 }
 
 // Returns why the quiz cannot be started yet, or null when it is ready
 export function validateTestConfig(config: TestConfig): string | null {
-  if (!config.title.trim()) return 'Title required';
   if (config.timeLimitMinutes < 1 || config.timeLimitMinutes > 180) {
     return 'Time limit: 1 to 180 minutes';
   }

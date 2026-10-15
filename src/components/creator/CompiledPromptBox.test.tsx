@@ -7,7 +7,7 @@ import { CompiledPromptBox } from './CompiledPromptBox';
 const props = {
   prompt: 'Generate a quiz' as string | null,
   isStale: false,
-  error: null as string | null,
+  errors: [] as string[],
   onUpdate: () => {},
 };
 
@@ -52,13 +52,38 @@ describe('CompiledPromptBox', () => {
     expect(screen.getByRole('status')).toHaveTextContent('Prompt copied');
   });
 
+  it('lists every problem with the options, one per line', () => {
+    render(
+      <CompiledPromptBox
+        {...props}
+        prompt={null}
+        isStale
+        errors={[
+          'Choose between 1 and 50 questions.',
+          'Select at least one question type.',
+        ]}
+      />,
+    );
+
+    expect(screen.getAllByRole('listitem')).toHaveLength(2);
+    expect(screen.getByRole('alert')).toHaveTextContent(
+      'Choose between 1 and 50 questions.',
+    );
+    expect(screen.getByRole('alert')).toHaveTextContent(
+      'Select at least one question type.',
+    );
+    expect(
+      screen.getByRole('button', { name: 'Update Prompt' }),
+    ).toBeDisabled();
+  });
+
   it('locks Update Prompt and shows the reason when the options are invalid', () => {
     render(
       <CompiledPromptBox
         {...props}
         prompt={null}
         isStale
-        error="Select at least one question type."
+        errors={['Select at least one question type.']}
       />,
     );
 

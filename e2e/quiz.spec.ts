@@ -5,6 +5,7 @@ const quizJson = readFileSync('e2e/fixtures/quiz.json', 'utf8');
 
 async function importQuiz(page: Page, title = 'Browser quiz') {
   await page.goto('/');
+  await page.getByRole('button', { name: 'I already have JSON' }).click();
   await page.getByLabel(/Test Title/).fill(title);
   await page.getByLabel('Quiz JSON').fill(quizJson);
   await page.getByRole('button', { name: 'Start Quiz Simulation Now' }).click();
@@ -20,9 +21,29 @@ test('opens on the creator', async ({ page }) => {
   await expect(
     page.getByRole('heading', { level: 1, name: 'Mock Test Creator' }),
   ).toBeVisible();
+  await expect(page.getByLabel('Number of Questions')).toBeVisible();
+  await expect(page.getByLabel('Quiz JSON')).toHaveCount(0);
+});
+
+test('warns about empty required options once the user moves below them, without losing the click', async ({
+  page,
+}) => {
+  await page.goto('/');
   await expect(
-    page.getByRole('button', { name: 'Start Quiz Simulation Now' }),
+    page.getByText(/Warning: Enter a number of questions/),
   ).toHaveCount(0);
+
+  // The warnings appear above the button, so they must not move it mid-click
+  const custom = page.getByRole('button', { name: 'Custom % Breakdown' });
+  await custom.click();
+
+  await expect(custom).toHaveAttribute('aria-pressed', 'true');
+  await expect(
+    page.getByText(/Warning: Enter a number of questions/),
+  ).toBeVisible();
+  await expect(
+    page.getByText(/Warning: You must select at least one question type/),
+  ).toBeVisible();
 });
 
 test('takes a quiz and finds the result in the history', async ({ page }) => {
@@ -49,6 +70,20 @@ test('takes a quiz and finds the result in the history', async ({ page }) => {
   await page.getByRole('button', { name: /Saved Library/ }).click();
   await page.getByRole('tab', { name: /Attempt History \(1\)/ }).click();
   await expect(page.getByText('Browser quiz').first()).toBeVisible();
+});
+
+test('starts ready JSON from step 2 with the title from the JSON', async ({
+  page,
+}) => {
+  await page.goto('/');
+  await page.getByRole('button', { name: 'I already have JSON' }).click();
+  await page.getByLabel('Quiz JSON').fill(quizJson);
+  await page.getByRole('button', { name: 'Start Quiz Simulation Now' }).click();
+
+  await expect(page.getByRole('timer')).toContainText('remaining');
+  await expect(
+    page.getByText(JSON.parse(quizJson).title).first(),
+  ).toBeVisible();
 });
 
 test('scores a quiz with wrong answers', async ({ page }) => {
@@ -82,13 +117,14 @@ test('keeps the quiz in the saved library after a reload', async ({ page }) => {
 
 test('explains a broken JSON', async ({ page }) => {
   await page.goto('/');
+  await page.getByRole('button', { name: 'I already have JSON' }).click();
 
   await page.getByLabel('Quiz JSON').fill('{"title": "Oops",');
 
   await expect(page.getByRole('alert')).toContainText('not valid JSON');
   await expect(
     page.getByRole('button', { name: 'Start Quiz Simulation Now' }),
-  ).toHaveCount(0);
+  ).toBeDisabled();
 });
 
 test('serves a health check for the container', async ({ request }) => {
@@ -108,6 +144,7 @@ test('keeps the quiz visible when answering a lower question in scroll mode', as
     prompt: `Question text ${i + 1}?`,
   }));
   await page.goto('/');
+  await page.getByRole('button', { name: 'I already have JSON' }).click();
   await page
     .getByRole('button', { name: 'Scroll Form (All Questions)' })
     .click();

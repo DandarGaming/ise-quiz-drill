@@ -118,6 +118,29 @@ test('scores a quiz with wrong answers', async ({ page }) => {
   ).toContainText('0 / 3 (0%)');
 });
 
+test('selects an option from anywhere on its highlighted row', async ({
+  page,
+}) => {
+  await importQuiz(page);
+  const option = page.getByRole('radio', { name: 'git merge' });
+  const row = page.locator('label', { has: option }).locator('xpath=..');
+  const box = await row.boundingBox();
+  if (!box) throw new Error('option row is not visible');
+
+  // Near the top and bottom edges, where the row is highlighted on hover
+  await page.mouse.click(box.x + 4, box.y + 3);
+  await expect(option).toBeChecked();
+
+  const other = page.getByRole('radio', { name: 'git tag' });
+  const otherBox = await page
+    .locator('label', { has: other })
+    .locator('xpath=..')
+    .boundingBox();
+  if (!otherBox) throw new Error('option row is not visible');
+  await page.mouse.click(otherBox.x + 4, otherBox.y + otherBox.height - 3);
+  await expect(other).toBeChecked();
+});
+
 test('keeps the quiz in the saved library after a reload', async ({ page }) => {
   page.on('dialog', (dialog) => dialog.accept());
   await importQuiz(page, 'Kept quiz');

@@ -136,14 +136,14 @@ describe('PromptOptionsForm', () => {
     }
   });
 
-  it('toggles question types and warns again when none is left', async () => {
+  it('toggles question types without a warning of its own, the prompt box reports the error', async () => {
     const onChange = vi.fn();
     render(<Harness onChange={onChange} />);
     const group = screen.getByRole('group', {
       name: 'Included Question Types',
     });
     const warning = /You must select at least one question type/;
-    expect(screen.getByText(warning)).toBeInTheDocument();
+    expect(screen.queryByText(warning)).toBeNull();
 
     await userEvent.click(
       within(group).getByRole('checkbox', { name: 'True / False' }),
@@ -160,7 +160,7 @@ describe('PromptOptionsForm', () => {
       await userEvent.click(box);
     }
     expect(last(onChange).types).toEqual([]);
-    expect(screen.getByText(warning)).toBeInTheDocument();
+    expect(screen.queryByText(warning)).toBeNull();
   });
 
   it('adds preset instructions to the notes', async () => {

@@ -59,7 +59,6 @@ export const PromptOptionsForm: React.FC<PromptOptionsFormProps> = ({
 
   const totalCustomPct = value.mix.easy + value.mix.medium + value.mix.hard;
   const isPctInvalid = value.difficulty === 'custom' && totalCustomPct !== 100;
-  const isNoTypeSelected = value.types.length === 0;
 
   const toggleType = (type: QuestionType, on: boolean) =>
     set(
@@ -208,18 +207,6 @@ export const PromptOptionsForm: React.FC<PromptOptionsFormProps> = ({
             </label>
           ))}
         </div>
-
-        {isNoTypeSelected && (
-          <div className="flex items-center gap-2 text-xs font-semibold text-red-700 mt-2">
-            <AlertTriangle
-              aria-hidden="true"
-              className="w-4 h-4 text-red-600 flex-shrink-0"
-            />
-            <span>
-              Warning: You must select at least one question type for the exam.
-            </span>
-          </div>
-        )}
       </fieldset>
 
       <div className="pt-2">

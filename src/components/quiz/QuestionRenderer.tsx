@@ -344,7 +344,7 @@ export const QuestionRenderer: React.FC<QuestionRendererProps> = ({
                     key={option.id}
                     onMouseEnter={() => setHoveredOptionId(option.id)}
                     onMouseLeave={() => setHoveredOptionId(null)}
-                    className={`flex items-center justify-between px-2.5 py-2.5 transition-all ${
+                    className={`flex items-stretch justify-between ${
                       reviewMode ? 'cursor-default' : 'cursor-pointer'
                     } ${
                       selected && !reviewMode
@@ -354,9 +354,11 @@ export const QuestionRenderer: React.FC<QuestionRendererProps> = ({
                       reviewMode && isWrongSelection ? 'bg-red-50/80' : ''
                     }`}
                   >
+                    {/* The label fills the whole highlighted row, so a click
+                        near its edge still picks the option */}
                     <label
                       htmlFor={inputId}
-                      className={`relative flex items-center gap-3 flex-1 pr-2 transition-opacity ${
+                      className={`relative flex items-center gap-3 flex-1 min-h-[52px] pl-2.5 pr-2 py-2.5 transition-opacity ${
                         reviewMode ? 'cursor-default' : 'cursor-pointer'
                       } ${isStruck ? 'opacity-40' : 'opacity-100'}`}
                     >
@@ -404,7 +406,7 @@ export const QuestionRenderer: React.FC<QuestionRendererProps> = ({
                       >
                         {isMulti ? (
                           <div
-                            className={`w-[22px] h-[22px] rounded-[5px] flex items-center justify-center transition-all border-[1.8px] flex-shrink-0 ${
+                            className={`w-[22px] h-[22px] rounded-[5px] flex items-center justify-center border-[1.8px] flex-shrink-0 ${
                               selected
                                 ? 'bg-white border-gray-600'
                                 : isOptionHovered
@@ -429,7 +431,7 @@ export const QuestionRenderer: React.FC<QuestionRendererProps> = ({
                           </div>
                         ) : (
                           <div
-                            className={`w-5 h-5 rounded-full flex items-center justify-center transition-all border-[1.8px] flex-shrink-0 ${
+                            className={`w-5 h-5 rounded-full flex items-center justify-center border-[1.8px] flex-shrink-0 ${
                               selected || isOptionHovered
                                 ? 'bg-white border-[#006fbf]'
                                 : 'bg-white border-gray-400'
@@ -460,7 +462,7 @@ export const QuestionRenderer: React.FC<QuestionRendererProps> = ({
                     </label>
 
                     {!reviewMode && (
-                      <div className="w-8 h-8 flex items-center justify-center flex-shrink-0 opacity-100">
+                      <div className="w-8 h-8 mr-2.5 self-center flex items-center justify-center flex-shrink-0 opacity-100">
                         <button
                           type="button"
                           onClick={() => toggleStruck(option.id)}

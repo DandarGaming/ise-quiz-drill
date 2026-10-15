@@ -136,14 +136,43 @@ describe('PromptOptionsForm', () => {
     }
   });
 
-  it('toggles question types without a warning of its own, the prompt box reports the error', async () => {
+  it('warns under each required field that is still empty', async () => {
+    render(<Harness />);
+    const group = screen.getByRole('group', {
+      name: 'Included Question Types',
+    });
+    const typesWarning = /You must select at least one question type/;
+    const countWarning = /Enter a number of questions between 1 and 50/;
+    expect(screen.getByText(typesWarning)).toBeInTheDocument();
+    expect(screen.getByText(countWarning)).toBeInTheDocument();
+
+    await userEvent.type(screen.getByLabelText('Number of Questions'), '10');
+    expect(screen.queryByText(countWarning)).toBeNull();
+    expect(screen.getByText(typesWarning)).toBeInTheDocument();
+
+    await userEvent.click(
+      within(group).getByRole('checkbox', { name: 'Multiple Choice' }),
+    );
+    expect(screen.queryByText(typesWarning)).toBeNull();
+  });
+
+  it('warns again for a question count outside 1 to 50', async () => {
+    render(<Harness />);
+    const count = screen.getByLabelText('Number of Questions');
+    const countWarning = /Enter a number of questions between 1 and 50/;
+
+    await userEvent.type(count, '20');
+    expect(screen.queryByText(countWarning)).toBeNull();
+    await userEvent.clear(count);
+    expect(screen.getByText(countWarning)).toBeInTheDocument();
+  });
+
+  it('toggles question types', async () => {
     const onChange = vi.fn();
     render(<Harness onChange={onChange} />);
     const group = screen.getByRole('group', {
       name: 'Included Question Types',
     });
-    const warning = /You must select at least one question type/;
-    expect(screen.queryByText(warning)).toBeNull();
 
     await userEvent.click(
       within(group).getByRole('checkbox', { name: 'True / False' }),
@@ -152,7 +181,6 @@ describe('PromptOptionsForm', () => {
       within(group).getByRole('checkbox', { name: 'Multi-Blank' }),
     );
     expect(last(onChange).types).toEqual(['true-false', 'multi-blank']);
-    expect(screen.queryByText(warning)).toBeNull();
 
     for (const box of within(group).getAllByRole('checkbox', {
       checked: true,
@@ -160,7 +188,6 @@ describe('PromptOptionsForm', () => {
       await userEvent.click(box);
     }
     expect(last(onChange).types).toEqual([]);
-    expect(screen.queryByText(warning)).toBeNull();
   });
 
   it('adds preset instructions to the notes', async () => {

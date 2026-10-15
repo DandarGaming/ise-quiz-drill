@@ -49,6 +49,23 @@ const pctInput =
 const typeChoice =
   'flex items-center gap-2 text-xs font-semibold text-gray-800 cursor-pointer bg-gray-50 border border-gray-200 p-2.5 rounded-lg hover:bg-gray-100';
 
+// Yellow because the field is only unfinished, not wrong
+const FieldWarning: React.FC<{ id: string; children: React.ReactNode }> = ({
+  id,
+  children,
+}) => (
+  <p
+    id={id}
+    className="flex items-center gap-2 text-xs font-semibold text-amber-700 mt-2"
+  >
+    <AlertTriangle
+      aria-hidden="true"
+      className="w-4 h-4 text-amber-600 flex-shrink-0"
+    />
+    <span>{children}</span>
+  </p>
+);
+
 export const PromptOptionsForm: React.FC<PromptOptionsFormProps> = ({
   value,
   onChange,
@@ -57,6 +74,8 @@ export const PromptOptionsForm: React.FC<PromptOptionsFormProps> = ({
   const set = <K extends keyof PromptOptions>(key: K, next: PromptOptions[K]) =>
     onChange({ ...value, [key]: next });
 
+  const isCountMissing = value.questionCount < 1;
+  const isNoTypeSelected = value.types.length === 0;
   const totalCustomPct = value.mix.easy + value.mix.medium + value.mix.hard;
   const isPctInvalid = value.difficulty === 'custom' && totalCustomPct !== 100;
 
@@ -96,8 +115,14 @@ export const PromptOptionsForm: React.FC<PromptOptionsFormProps> = ({
           max={50}
           value={value.questionCount || ''}
           onChange={(e) => set('questionCount', toNumber(e.target.value, 50))}
+          aria-describedby={isCountMissing ? 'prompt-count-warning' : undefined}
           className={`${textInput} font-semibold`}
         />
+        {isCountMissing && (
+          <FieldWarning id="prompt-count-warning">
+            Warning: Enter a number of questions between 1 and 50.
+          </FieldWarning>
+        )}
       </div>
 
       <div className="border-t border-gray-100 pt-4 space-y-4">
@@ -190,7 +215,10 @@ export const PromptOptionsForm: React.FC<PromptOptionsFormProps> = ({
         )}
       </div>
 
-      <fieldset className="space-y-2 pt-2">
+      <fieldset
+        aria-describedby={isNoTypeSelected ? 'prompt-types-warning' : undefined}
+        className="space-y-2 pt-2"
+      >
         <legend className="block text-xs font-bold uppercase tracking-wider text-gray-700">
           Included Question Types
         </legend>
@@ -207,6 +235,12 @@ export const PromptOptionsForm: React.FC<PromptOptionsFormProps> = ({
             </label>
           ))}
         </div>
+
+        {isNoTypeSelected && (
+          <FieldWarning id="prompt-types-warning">
+            Warning: You must select at least one question type for the exam.
+          </FieldWarning>
+        )}
       </fieldset>
 
       <div className="pt-2">

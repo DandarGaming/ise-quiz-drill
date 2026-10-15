@@ -25,6 +25,27 @@ test('opens on the creator', async ({ page }) => {
   await expect(page.getByLabel('Quiz JSON')).toHaveCount(0);
 });
 
+test('warns about empty required options once the user moves below them, without losing the click', async ({
+  page,
+}) => {
+  await page.goto('/');
+  await expect(
+    page.getByText(/Warning: Enter a number of questions/),
+  ).toHaveCount(0);
+
+  // The warnings appear above the button, so they must not move it mid-click
+  const custom = page.getByRole('button', { name: 'Custom % Breakdown' });
+  await custom.click();
+
+  await expect(custom).toHaveAttribute('aria-pressed', 'true');
+  await expect(
+    page.getByText(/Warning: Enter a number of questions/),
+  ).toBeVisible();
+  await expect(
+    page.getByText(/Warning: You must select at least one question type/),
+  ).toBeVisible();
+});
+
 test('takes a quiz and finds the result in the history', async ({ page }) => {
   await importQuiz(page);
 

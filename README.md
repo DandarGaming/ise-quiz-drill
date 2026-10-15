@@ -108,8 +108,11 @@ podman push ise-quiz-drill "$REGISTRY/ise-quiz-drill:v2.0.0"
 The image runs on ECS Express Mode. The live URL is linked under
 **Deployments → production** on the repository page and in the summary of each
 deploy run (it is also the `ServiceUrl` output of `ServiceStack`). A CloudWatch
-alarm fires when no task passes `/api/health` for three minutes. Roll back by
-deploying an older commit tag:
+alarm fires when no task passes `/api/health` for three minutes and emails the
+address in the `ALARM_EMAIL` repository secret, once when the site goes down and
+once when it is back. AWS sends a confirmation email after the first deploy with
+a new address; no alarm email arrives until the link in it is clicked. Roll back
+by deploying an older commit tag:
 
 ```sh
 cd cdk

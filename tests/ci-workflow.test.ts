@@ -95,6 +95,15 @@ describe('container deploy', () => {
     });
   });
 
+  // The address stays out of the public repo; an empty secret means no email
+  it('passes the alarm email from a secret to the deploy', () => {
+    const deployStep = (
+      deploy.steps as (Step & { env?: Record<string, string> })[]
+    ).find((s) => s.name === 'Deploy the service');
+    expect(deployStep?.env?.ALARM_EMAIL).toBe('${{ secrets.ALARM_EMAIL }}');
+    expect(deployStep?.run).toContain('-c alarmEmail="$ALARM_EMAIL"');
+  });
+
   it('writes the URL and image tag to the job summary', () => {
     const summary = run()
       .split('\n')

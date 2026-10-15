@@ -8,6 +8,7 @@ export type DifficultyMode = 'auto' | 'easy' | 'medium' | 'hard' | 'custom';
 
 // Settings the app applies itself; none of them is sent to the AI
 export interface TestConfig {
+  // Optional: when empty the quiz keeps the title written in its JSON
   title: string;
   timeLimitMinutes: number;
   templateMode: TemplateMode;
@@ -101,7 +102,6 @@ export function validatePromptOptions(options: PromptOptions): string | null {
 
 // Returns why the quiz cannot be started yet, or null when it is ready
 export function validateTestConfig(config: TestConfig): string | null {
-  if (!config.title.trim()) return 'Title required';
   if (config.timeLimitMinutes < 1 || config.timeLimitMinutes > 180) {
     return 'Time limit: 1 to 180 minutes';
   }

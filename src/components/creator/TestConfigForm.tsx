@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { AlertTriangle } from 'lucide-react';
 import type { TestConfig } from '../../utils/promptBuilder';
 import { fieldLabel, textInput, toNumber } from './formFields';
@@ -6,6 +6,8 @@ import { fieldLabel, textInput, toNumber } from './formFields';
 export interface TestConfigFormProps {
   value: TestConfig;
   onChange: (next: TestConfig) => void;
+  // Title written in the pasted JSON, used when the field is left empty
+  titleFallback?: string;
 }
 
 const acChoice =
@@ -14,9 +16,8 @@ const acChoice =
 export const TestConfigForm: React.FC<TestConfigFormProps> = ({
   value,
   onChange,
+  titleFallback = '',
 }) => {
-  const [titleTouched, setTitleTouched] = useState(false);
-  const titleMissing = titleTouched && !value.title.trim();
   const set = <K extends keyof TestConfig>(key: K, next: TestConfig[K]) =>
     onChange({ ...value, [key]: next });
 
@@ -31,34 +32,21 @@ export const TestConfigForm: React.FC<TestConfigFormProps> = ({
       className="space-y-6"
     >
       <div>
-        <div className="flex items-baseline gap-1 mb-1.5">
-          <label
-            htmlFor="test-title"
-            className="text-xs font-bold uppercase tracking-wider text-gray-700"
-          >
-            Test Title
-          </label>
-          <span aria-hidden="true" className="text-red-600 font-bold">
-            *
-          </span>
-          {titleMissing && (
-            <span className="ml-auto text-xs font-bold text-red-600">
-              Required
-            </span>
-          )}
-        </div>
+        <label htmlFor="test-title" className={fieldLabel}>
+          Test Title
+        </label>
         <input
           id="test-title"
           type="text"
-          required
-          aria-invalid={titleMissing ? true : undefined}
           value={value.title}
+          placeholder={titleFallback}
           onChange={(e) => set('title', e.target.value)}
-          onBlur={() => setTitleTouched(true)}
-          className={`${textInput} font-medium ${
-            titleMissing ? 'border-red-600 focus:ring-red-600' : ''
-          }`}
+          aria-describedby="test-title-hint"
+          className={`${textInput} font-medium`}
         />
+        <p id="test-title-hint" className="text-xs text-gray-600 mt-1">
+          Leave empty to use the title from the JSON.
+        </p>
       </div>
 
       <div>

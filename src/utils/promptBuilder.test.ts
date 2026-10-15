@@ -109,13 +109,13 @@ describe('validatePromptOptions', () => {
 });
 
 describe('validateTestConfig', () => {
-  it('accepts a title with the default settings', () => {
+  it('accepts the default settings', () => {
     expect(validateTestConfig(config())).toBeNull();
   });
 
-  it('needs a title', () => {
-    expect(validateTestConfig(config({ title: '' }))).toBe('Title required');
-    expect(validateTestConfig(config({ title: '   ' }))).toBe('Title required');
+  it('does not need a title, the quiz JSON has one', () => {
+    expect(validateTestConfig(config({ title: '' }))).toBeNull();
+    expect(validateTestConfig(config({ title: '   ' }))).toBeNull();
   });
 
   it('needs a time limit between 1 and 180 minutes', () => {

@@ -14,7 +14,7 @@ const navButton = (active: boolean) =>
   `px-3 py-1.5 rounded-md text-xs font-bold transition-all cursor-pointer flex items-center gap-2 ${
     active
       ? 'bg-[#006fbf] text-white shadow-xs'
-      : 'text-slate-300 hover:text-white hover:bg-slate-700/60'
+      : 'text-slate-300 hover:text-white hover:bg-slate-700'
   }`;
 
 export const AppContainer: React.FC = () => {
@@ -86,7 +86,7 @@ export const AppContainer: React.FC = () => {
         <div className="flex items-center gap-6">
           <span className="font-bold text-lg tracking-tight">Quiz Drill</span>
 
-          <div className="flex items-center gap-1 bg-slate-800/80 p-1 rounded-lg border border-slate-700">
+          <div className="flex items-center gap-1 bg-slate-800 p-1 rounded-lg border border-slate-700">
             <button
               type="button"
               aria-current={viewMode === 'creator' ? 'page' : undefined}
@@ -107,7 +107,7 @@ export const AppContainer: React.FC = () => {
                 <span
                   className={`px-1.5 py-0.2 rounded-full text-[10px] font-extrabold ${
                     viewMode === 'history'
-                      ? 'bg-white/20 text-white'
+                      ? 'bg-white text-[#006fbf]'
                       : 'bg-slate-700 text-slate-200'
                   }`}
                 >

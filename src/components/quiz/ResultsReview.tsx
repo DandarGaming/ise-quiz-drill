@@ -36,29 +36,29 @@ const formatDuration = (secs: number) => {
 function eventColours(type: string) {
   if (type.includes('focus_lost') || type.includes('exit')) {
     return {
-      row: 'bg-amber-50 border-amber-200',
-      text: 'text-amber-900',
-      tag: 'bg-amber-200 text-amber-900',
+      row: 'border-gray-200 shadow-[inset_4px_0_0_#f59e0b]',
+      text: 'text-gray-900',
+      tag: 'bg-amber-500 text-gray-900',
     };
   }
   if (type.includes('attempt') || type.includes('violation')) {
     return {
-      row: 'bg-red-50 border-red-200',
-      text: 'text-red-900',
-      tag: 'bg-red-200 text-red-900',
+      row: 'border-gray-200 shadow-[inset_4px_0_0_#dc2626]',
+      text: 'text-gray-900',
+      tag: 'bg-red-600 text-white',
     };
   }
   if (type.includes('regained')) {
     return {
-      row: 'bg-emerald-50 border-emerald-200',
-      text: 'text-emerald-900',
-      tag: 'bg-emerald-200 text-emerald-900',
+      row: 'border-gray-200 shadow-[inset_4px_0_0_#16a34a]',
+      text: 'text-gray-900',
+      tag: 'bg-green-600 text-white',
     };
   }
   return {
-    row: 'bg-gray-50 border-gray-200',
-    text: 'text-gray-800',
-    tag: 'bg-gray-200 text-gray-800',
+    row: 'border-gray-200 shadow-[inset_4px_0_0_#4b5563]',
+    text: 'text-gray-900',
+    tag: 'bg-gray-600 text-white',
   };
 }
 
@@ -164,7 +164,7 @@ export const ResultsReview: React.FC<ResultsReviewProps> = ({
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4 pt-1">
-              <div className="bg-blue-50/70 border border-blue-100 rounded-lg p-4 flex items-center gap-4">
+              <div className="bg-white border border-gray-200 rounded-lg p-4 flex items-center gap-4">
                 <div className="p-3 bg-[#006fbf] text-white rounded-full flex-shrink-0">
                   <Award aria-hidden="true" className="w-6 h-6" />
                 </div>
@@ -181,7 +181,7 @@ export const ResultsReview: React.FC<ResultsReviewProps> = ({
                 </div>
               </div>
 
-              <div className="bg-gray-50 border border-gray-200 rounded-lg p-4 flex items-center gap-4">
+              <div className="bg-white border border-gray-200 rounded-lg p-4 flex items-center gap-4">
                 <div className="p-3 bg-gray-700 text-white rounded-full flex-shrink-0">
                   <Clock aria-hidden="true" className="w-6 h-6" />
                 </div>
@@ -195,7 +195,7 @@ export const ResultsReview: React.FC<ResultsReviewProps> = ({
                 </div>
               </div>
 
-              <div className="bg-green-50/70 border border-green-100 rounded-lg p-4 flex items-center gap-4">
+              <div className="bg-white border border-gray-200 rounded-lg p-4 flex items-center gap-4">
                 <div className="p-3 bg-green-600 text-white rounded-full flex-shrink-0">
                   <CheckCircle2 aria-hidden="true" className="w-6 h-6" />
                 </div>
@@ -234,7 +234,7 @@ export const ResultsReview: React.FC<ResultsReviewProps> = ({
               </div>
 
               {eventLog.length === 0 ? (
-                <div className="bg-emerald-50 text-emerald-800 p-4 rounded-lg flex items-center justify-center gap-2 text-sm font-semibold border border-emerald-100">
+                <div className="bg-green-600 text-white p-4 rounded-lg flex items-center justify-center gap-2 text-sm font-semibold">
                   <CheckCircle2 aria-hidden="true" className="w-5 h-5" /> No
                   violations detected during this attempt.
                 </div>
@@ -245,7 +245,7 @@ export const ResultsReview: React.FC<ResultsReviewProps> = ({
                     return (
                       <li
                         key={idx}
-                        className={`p-3 rounded-lg border flex flex-col sm:flex-row sm:items-center justify-between gap-3 ${colours.row}`}
+                        className={`p-3 bg-white rounded-lg border flex flex-col sm:flex-row sm:items-center justify-between gap-3 ${colours.row}`}
                       >
                         <div className="flex items-center gap-3">
                           <span
@@ -261,7 +261,7 @@ export const ResultsReview: React.FC<ResultsReviewProps> = ({
                         </div>
                         <time
                           dateTime={event.timestamp}
-                          className="text-xs font-mono text-gray-500 bg-white/60 px-2 py-1 rounded shadow-sm border border-black/5"
+                          className="text-xs font-mono text-gray-600 bg-white px-2 py-1 rounded border border-gray-300"
                         >
                           {new Date(event.timestamp).toLocaleTimeString([], {
                             hour: '2-digit',
@@ -388,7 +388,7 @@ export const ResultsReview: React.FC<ResultsReviewProps> = ({
                   <button
                     type="button"
                     onClick={() => setFilterMode('all')}
-                    className="mt-2 px-4 py-2 bg-blue-50 text-[#006fbf] hover:bg-blue-100 border border-blue-200 font-bold rounded-lg text-xs transition-colors cursor-pointer"
+                    className="mt-2 px-4 py-2 bg-white hover:bg-[#006fbf] text-[#006fbf] hover:text-white border border-[#006fbf] font-bold rounded-lg text-xs transition-colors cursor-pointer"
                   >
                     View All Questions ({totalCount})
                   </button>

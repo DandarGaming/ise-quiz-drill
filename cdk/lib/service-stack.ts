@@ -1,12 +1,17 @@
 import * as cdk from 'aws-cdk-lib';
 import * as cloudwatch from 'aws-cdk-lib/aws-cloudwatch';
+import * as cloudwatchActions from 'aws-cdk-lib/aws-cloudwatch-actions';
 import * as ecs from 'aws-cdk-lib/aws-ecs';
+import * as sns from 'aws-cdk-lib/aws-sns';
+import * as subscriptions from 'aws-cdk-lib/aws-sns-subscriptions';
 import type { ServiceRolesStack } from './service-roles-stack';
 
 export interface ServiceStackProps extends cdk.StackProps {
   // Image tag in the ise-quiz-drill repository, the short commit SHA in CI
   imageTag: string;
   roles: ServiceRolesStack;
+  // Who gets an email when the health alarm fires; none when left out
+  alarmEmail?: string;
 }
 
 // Runs the app container on ECS Express Mode (see ADR-007)
@@ -56,7 +61,7 @@ export class ServiceStack extends cdk.Stack {
         period: cdk.Duration.minutes(1),
       });
 
-    new cloudwatch.Alarm(this, 'NoHealthyTaskAlarm', {
+    const alarm = new cloudwatch.Alarm(this, 'NoHealthyTaskAlarm', {
       alarmDescription: 'No task of ise-quiz-drill passes /api/health',
       metric: new cloudwatch.MathExpression({
         expression: 'FILL(blue, 0) + FILL(green, 0)',
@@ -70,6 +75,17 @@ export class ServiceStack extends cdk.Stack {
       datapointsToAlarm: 3,
       treatMissingData: cloudwatch.TreatMissingData.BREACHING,
     });
+
+    // One email when the site goes down and one when it is back. AWS sends a
+    // confirmation email first; nothing arrives until it is confirmed.
+    const alarmTopic = new sns.Topic(this, 'AlarmTopic');
+    if (props.alarmEmail) {
+      alarmTopic.addSubscription(
+        new subscriptions.EmailSubscription(props.alarmEmail),
+      );
+    }
+    alarm.addAlarmAction(new cloudwatchActions.SnsAction(alarmTopic));
+    alarm.addOkAction(new cloudwatchActions.SnsAction(alarmTopic));
 
     new cdk.CfnOutput(this, 'ServiceUrl', {
       value: `https://${service.attrEndpoint}`,

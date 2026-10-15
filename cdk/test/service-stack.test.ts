@@ -5,11 +5,16 @@ import { ServiceStack } from '../lib/service-stack';
 
 const env = { account: '123456789012', region: 'eu-west-1' };
 
-const template = (imageTag = 'abc1234') => {
+const template = (imageTag = 'abc1234', alarmEmail?: string) => {
   const app = new cdk.App();
   const roles = new ServiceRolesStack(app, 'TestRolesStack', { env });
   return Template.fromStack(
-    new ServiceStack(app, 'TestServiceStack', { env, imageTag, roles }),
+    new ServiceStack(app, 'TestServiceStack', {
+      env,
+      imageTag,
+      roles,
+      alarmEmail,
+    }),
   );
 };
 
@@ -84,6 +89,26 @@ describe('ServiceStack', () => {
 
     test('treats missing data as unhealthy', () => {
       expect(alarm().TreatMissingData).toBe('breaching');
+    });
+
+    // One message when the site goes down and one when it is back
+    test('notifies an SNS topic when it fires and when it recovers', () => {
+      const t = template();
+      t.resourceCountIs('AWS::SNS::Topic', 1);
+      const topic = { Ref: Object.keys(t.findResources('AWS::SNS::Topic'))[0] };
+      expect(alarm().AlarmActions).toEqual([topic]);
+      expect(alarm().OKActions).toEqual([topic]);
+    });
+
+    test('emails the topic when an address is given', () => {
+      template('abc1234', 'owner@example.com').hasResourceProperties(
+        'AWS::SNS::Subscription',
+        { Protocol: 'email', Endpoint: 'owner@example.com' },
+      );
+    });
+
+    test('adds no subscription without an address', () => {
+      template().resourceCountIs('AWS::SNS::Subscription', 0);
     });
   });
 

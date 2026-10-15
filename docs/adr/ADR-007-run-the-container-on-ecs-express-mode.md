@@ -68,5 +68,7 @@ Options considered:
 - The first ECS use in an account creates service-linked roles for ECS, load
   balancing and auto scaling. Our first two deploys failed while those were
   being created; later deploys are not affected.
-- The alarm has no notification yet; it shows in the CloudWatch console. An
-  SNS topic with an email subscription can be added when someone is on call.
+- The alarm sends to an SNS topic when it fires and when it recovers. The
+  topic emails the address in the ALARM_EMAIL repository secret, kept out of
+  the public repo; without the secret the alarm only shows in the console.
+  AWS asks the address to confirm the subscription once.

@@ -94,8 +94,11 @@ jobs:
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-region: eu-west-1
 
+      # The alarm email is a secret so the address stays out of the public repo
       - name: Deploy the service
-        run: cd cdk && npx cdk deploy ServiceStack -c imageTag="${GITHUB_SHA::7}" --require-approval never --outputs-file cdk-outputs.json
+        env:
+          ALARM_EMAIL: ${{ secrets.ALARM_EMAIL }}
+        run: cd cdk && npx cdk deploy ServiceStack -c imageTag="${GITHUB_SHA::7}" -c alarmEmail="$ALARM_EMAIL" --require-approval never --outputs-file cdk-outputs.json
 
       - name: Smoke test the service
         id: service

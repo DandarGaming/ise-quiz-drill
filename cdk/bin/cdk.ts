@@ -30,9 +30,12 @@ const roles = new ServiceRolesStack(app, 'ServiceRolesStack', {
   env: { account: '468204079455', region: 'eu-west-1' },
 });
 
-// CI passes the short commit SHA: cdk deploy ServiceStack -c imageTag=<sha>
+// CI passes the short commit SHA and the alarm email from a secret:
+// cdk deploy ServiceStack -c imageTag=<sha> -c alarmEmail=<address>
 new ServiceStack(app, 'ServiceStack', {
   env: { account: '468204079455', region: 'eu-west-1' },
   imageTag: app.node.tryGetContext('imageTag') ?? 'latest',
+  // An unset secret arrives as an empty string
+  alarmEmail: app.node.tryGetContext('alarmEmail') || undefined,
   roles,
 });

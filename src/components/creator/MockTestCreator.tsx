@@ -191,7 +191,8 @@ export const MockTestCreator: React.FC<MockTestCreatorProps> = ({
             result={result}
           />
 
-          <div className="border-t border-gray-100 pt-6">
+          <div className="border-t border-gray-100 pt-6 space-y-6">
+            {/* Slot for the preset picker: before the settings it fills */}
             <TestConfigForm
               value={config}
               onChange={setConfig}

@@ -117,12 +117,20 @@ describe('PromptOptionsForm', () => {
     });
 
     expect(
-      within(group).getByRole('checkbox', { name: 'Multi-Blank' }),
-    ).not.toBeChecked();
+      within(group).getByRole('checkbox', { name: 'Multiple Choice' }),
+    ).toBeChecked();
+    for (const name of [
+      'Multi-Select',
+      'True / False',
+      'Short Answer',
+      'Multi-Blank',
+    ]) {
+      expect(within(group).getByRole('checkbox', { name })).not.toBeChecked();
+    }
     await userEvent.click(
       within(group).getByRole('checkbox', { name: 'True / False' }),
     );
-    expect(last(onChange).types).not.toContain('true-false');
+    expect(last(onChange).types).toEqual(['mcq', 'true-false']);
 
     for (const box of within(group).getAllByRole('checkbox', {
       checked: true,

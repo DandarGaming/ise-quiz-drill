@@ -79,6 +79,10 @@ describe('validatePromptOptions', () => {
     expect(validatePromptOptions(defaultPromptOptions)).toBeNull();
   });
 
+  it('starts with only multiple choice ticked', () => {
+    expect(defaultPromptOptions.types).toEqual(['mcq']);
+  });
+
   it('needs at least one question type', () => {
     expect(validatePromptOptions(options({ types: [] }))).toBe(
       'Select at least one question type.',

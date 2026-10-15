@@ -43,7 +43,7 @@ export const defaultPromptOptions: PromptOptions = {
   difficulty: 'auto',
   mix: { easy: 30, medium: 50, hard: 20 },
   topics: '',
-  types: ['mcq', 'multi-select', 'true-false', 'short-answer'],
+  types: ['mcq'],
   notes: '',
 };
 

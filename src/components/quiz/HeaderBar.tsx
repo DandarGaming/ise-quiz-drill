@@ -1,6 +1,5 @@
 import React from 'react';
 import { ShieldAlert, X } from 'lucide-react';
-import { AppearanceSettings, type Theme } from '../app/AppearanceSettings';
 
 export interface HeaderBarProps {
   title: string;
@@ -11,8 +10,6 @@ export interface HeaderBarProps {
   // Pulse the time when it is about to run out
   isWarning?: boolean;
   onExit: () => void;
-  theme?: Theme;
-  onThemeChange?: (theme: Theme) => void;
 }
 
 export function formatDuration(seconds: number): string {
@@ -34,8 +31,6 @@ export const HeaderBar: React.FC<HeaderBarProps> = ({
   isProctored = false,
   isWarning = false,
   onExit,
-  theme,
-  onThemeChange,
 }) => {
   const ratio =
     totalSeconds > 0
@@ -58,9 +53,6 @@ export const HeaderBar: React.FC<HeaderBarProps> = ({
       </div>
 
       <div className="flex items-center gap-6">
-        {theme && onThemeChange && (
-          <AppearanceSettings theme={theme} onChange={onThemeChange} />
-        )}
         {showTimer && (
           <div role="timer" className="flex items-center gap-3">
             <svg

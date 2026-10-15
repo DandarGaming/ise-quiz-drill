@@ -15,7 +15,11 @@ const THEME_STORAGE_KEY = 'quiz-drill-theme';
 
 const loadTheme = (): Theme => {
   const storage = browserStorage();
-  return storage && safely(() => storage.getItem(THEME_STORAGE_KEY)) === 'dark'
+  const savedTheme =
+    storage && safely(() => storage.getItem(THEME_STORAGE_KEY));
+  if (savedTheme === 'dark' || savedTheme === 'light') return savedTheme;
+  return typeof window !== 'undefined' &&
+    window.matchMedia?.('(prefers-color-scheme: dark)').matches
     ? 'dark'
     : 'light';
 };
@@ -93,8 +97,6 @@ export const AppContainer: React.FC = () => {
           key={currentQuiz.id}
           quiz={currentQuiz}
           onExit={() => showView('creator')}
-          theme={theme}
-          onThemeChange={setTheme}
         />
       </div>
     );

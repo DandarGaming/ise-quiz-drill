@@ -114,6 +114,7 @@ describe('QuestionRenderer', () => {
 
     expect(onChange).toHaveBeenLastCalledWith('a');
     expect(screen.getByRole('radio', { name: 'git branch' })).toBeChecked();
+    expect(screen.getByText('git branch')).toHaveClass('text-[#1f2937]');
   });
 
   // The input is visually hidden (absolute). Without a positioned label around

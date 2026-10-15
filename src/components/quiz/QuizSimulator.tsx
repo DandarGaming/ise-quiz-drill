@@ -25,7 +25,6 @@ import {
   safely,
   type KeyValueStore,
 } from '../../utils/browserStorage';
-import type { Theme } from '../app/AppearanceSettings';
 import { HeaderBar } from './HeaderBar';
 import { QuestionNavigator } from './QuestionNavigator';
 import { QuestionRenderer } from './QuestionRenderer';
@@ -36,8 +35,6 @@ export interface QuizSimulatorProps {
   quiz: QuizConfig;
   onExit?: () => void;
   storage?: KeyValueStore;
-  theme?: Theme;
-  onThemeChange?: (theme: Theme) => void;
 }
 
 // Warn when this many seconds are left, largest first
@@ -74,7 +71,7 @@ const PageBar: React.FC<{
         className={`px-7 py-3 text-base font-bold rounded transition-colors ${
           page === 1
             ? 'bg-[#e3e8ee] text-[#556370] cursor-not-allowed'
-            : 'bg-[#e3e8ee] text-gray-900 hover:bg-gray-300'
+            : 'bg-[#e3e8ee] text-[#1f2937] hover:bg-gray-300'
         }`}
       >
         Previous Page
@@ -132,8 +129,6 @@ export const QuizSimulator: React.FC<QuizSimulatorProps> = ({
   quiz,
   onExit,
   storage = browserStorage(),
-  theme,
-  onThemeChange,
 }) => {
   const { questions, totalPages } = useMemo(() => paginate(quiz), [quiz]);
   // An attempt lives in memory only: a new start or a reload is a new attempt
@@ -441,8 +436,6 @@ export const QuizSimulator: React.FC<QuizSimulatorProps> = ({
           totalSeconds={quiz.timeLimitMinutes * 60}
           isWarning={isTimerBlinking}
           onExit={handleExit}
-          theme={theme}
-          onThemeChange={onThemeChange}
         />
 
         <div className="flex flex-1 overflow-hidden min-h-0">
@@ -508,7 +501,7 @@ export const QuizSimulator: React.FC<QuizSimulatorProps> = ({
                       className={`px-7 py-3 font-bold rounded text-base transition-colors cursor-pointer ${
                         isAllAnswered
                           ? 'bg-[#006fbf] hover:bg-[#005694] text-white shadow-sm'
-                          : 'bg-[#e3e8ee] hover:bg-[#d5dde6] text-gray-900'
+                          : 'bg-[#e3e8ee] hover:bg-[#d5dde6] text-[#1f2937]'
                       }`}
                     >
                       Submit Quiz

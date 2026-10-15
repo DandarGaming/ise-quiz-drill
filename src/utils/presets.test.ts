@@ -156,7 +156,7 @@ describe('built-in presets', () => {
   it.each(presets.map((preset) => [preset.id, preset] as const))(
     '%s gives prompt options the form accepts',
     (_id, preset) => {
-      expect(validatePromptOptions(applyPresetPrompt(preset))).toBeNull();
+      expect(validatePromptOptions(applyPresetPrompt(preset))).toEqual([]);
     },
   );
 

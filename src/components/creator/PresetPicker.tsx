@@ -1,4 +1,5 @@
 import { useEffect, useId, useRef, useState } from 'react';
+import { track } from '../../utils/analytics';
 import type { Preset } from '../../utils/presets';
 import { fieldLabel, textInput } from './formFields';
 
@@ -54,6 +55,7 @@ export function PresetPicker<T>({
   const run = (action: Pending) => {
     if (action.kind === 'apply') {
       onChange(applyPreset(action.preset));
+      track({ event: 'preset_applied', props: { presetId: action.preset.id } });
       setMessage(`Applied ${action.preset.name} to ${scope}.`);
     } else {
       onChange(reset());

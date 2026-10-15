@@ -15,6 +15,7 @@ import type {
 } from '../../types/quiz';
 import { useAntiCheat } from '../../hooks/useAntiCheat';
 import { useQuizTimer } from '../../hooks/useQuizTimer';
+import { quizStarted, quizSubmitted, track } from '../../utils/analytics';
 import { isAnswered, type Answer } from '../../utils/answers';
 import { appendHistory } from '../../utils/attemptStorage';
 import { gradeQuiz } from '../../utils/grading';
@@ -171,6 +172,7 @@ export const QuizSimulator: React.FC<QuizSimulatorProps> = ({
       quizSnapshot: quiz,
     };
     if (storage) safely(() => appendHistory(storage, next));
+    track(quizSubmitted(quiz, next.percentage, next.timeTakenSeconds));
     setIsSubmitModalOpen(false);
     setRecord(next);
     // Leave fullscreen so the results are read in the normal browser window
@@ -235,6 +237,7 @@ export const QuizSimulator: React.FC<QuizSimulatorProps> = ({
   });
 
   const handleRestartQuiz = () => {
+    track(quizStarted(quiz));
     submittedRef.current = false;
     warned.current.clear();
     setToastState({ message: null, isExiting: false });
@@ -305,7 +308,7 @@ export const QuizSimulator: React.FC<QuizSimulatorProps> = ({
       />
 
       {antiCheat.needsFullscreen && (
-        <div className="fixed inset-0 z-[100] h-screen w-screen bg-white/95 backdrop-blur-sm flex flex-col items-center justify-center p-6 text-center">
+        <div className="fixed inset-0 z-[100] h-screen w-screen bg-white flex flex-col items-center justify-center p-6 text-center">
           <div
             role="alertdialog"
             aria-modal="true"
@@ -340,7 +343,7 @@ export const QuizSimulator: React.FC<QuizSimulatorProps> = ({
       )}
 
       {antiCheat.alert && (
-        <div className="fixed inset-0 z-[90] h-screen w-screen bg-black/60 flex flex-col items-center justify-center p-6 backdrop-blur-sm">
+        <div className="fixed inset-0 z-[90] h-screen w-screen bg-black/60 flex flex-col items-center justify-center p-6">
           <div
             role="alertdialog"
             aria-modal="true"

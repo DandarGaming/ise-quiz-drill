@@ -9,6 +9,8 @@ export interface CompiledPromptBoxProps {
   // Everything that stops the prompt from being built from the current options
   errors: string[];
   onUpdate: () => void;
+  // Called after the prompt reached the clipboard
+  onCopied?: () => void;
 }
 
 export const CompiledPromptBox: React.FC<CompiledPromptBoxProps> = ({
@@ -16,6 +18,7 @@ export const CompiledPromptBox: React.FC<CompiledPromptBoxProps> = ({
   isStale,
   errors,
   onUpdate,
+  onCopied,
 }) => {
   const [promptCopied, setPromptCopied] = useState(false);
   const hasErrors = errors.length > 0;
@@ -33,6 +36,7 @@ export const CompiledPromptBox: React.FC<CompiledPromptBoxProps> = ({
     try {
       await navigator.clipboard.writeText(prompt);
       setPromptCopied(true);
+      onCopied?.();
     } catch {
       // Clipboard blocked; the prompt stays visible to select by hand
     }

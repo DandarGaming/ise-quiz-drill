@@ -1,6 +1,7 @@
-import React, { useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { ArrowRight, MessageSquareText, Play, Settings } from 'lucide-react';
 import type { QuizConfig } from '../../types/quiz';
+import { track } from '../../utils/analytics';
 import {
   buildPrompt,
   defaultPromptOptions,
@@ -18,6 +19,9 @@ import {
   resetTestConfig,
 } from '../../utils/presets';
 import { parseQuizJson, type ImportSettings } from '../../utils/quizSchema';
+import type { ReadyTest } from '../../utils/readyTests';
+import { readyTests as builtInReadyTests } from '../../data/readyTests';
+import { ReadyTests } from './ReadyTests';
 import { CompiledPromptBox } from './CompiledPromptBox';
 import { JsonImporter } from './JsonImporter';
 import { PresetPicker } from './PresetPicker';
@@ -26,6 +30,7 @@ import { TestConfigForm } from './TestConfigForm';
 
 export interface MockTestCreatorProps {
   onStart: (quiz: QuizConfig) => void;
+  readyTests?: ReadyTest[];
 }
 
 const card =
@@ -41,6 +46,7 @@ const paths = [
 
 export const MockTestCreator: React.FC<MockTestCreatorProps> = ({
   onStart,
+  readyTests = builtInReadyTests,
 }) => {
   // Options, config and JSON text live here, not in the step sections, so
   // they survive a change of step and a preset can fill them from step 1.
@@ -79,6 +85,14 @@ export const MockTestCreator: React.FC<MockTestCreatorProps> = ({
     [jsonText, settings],
   );
 
+  // Once per change between valid and invalid JSON, not once per keystroke
+  const importValid = result ? result.ok : null;
+  useEffect(() => {
+    if (importValid !== null) {
+      track({ event: 'quiz_imported', props: { valid: importValid } });
+    }
+  }, [importValid]);
+
   const quiz =
     result?.ok === true
       ? { ...result.quiz, title: config.title.trim() || result.quiz.title }
@@ -103,12 +117,16 @@ export const MockTestCreator: React.FC<MockTestCreatorProps> = ({
         </div>
       </div>
 
+      <ReadyTests tests={readyTests} onStart={(test) => onStart(test.quiz)} />
+
       <div className={card}>
         <span
           id="creator-path"
           className="block text-xs font-bold uppercase tracking-wider text-gray-700"
         >
-          Where do your questions come from?
+          {readyTests.length > 0
+            ? 'Or make your own: where do your questions come from?'
+            : 'Where do your questions come from?'}
         </span>
         <div
           role="group"
@@ -171,6 +189,12 @@ export const MockTestCreator: React.FC<MockTestCreatorProps> = ({
             isStale={isStale}
             errors={optionsErrors}
             onUpdate={handleUpdate}
+            onCopied={() =>
+              track({
+                event: 'prompt_copied',
+                props: { questionCount: options.questionCount },
+              })
+            }
           />
 
           <div className="border-t border-gray-100 pt-4 flex justify-end">

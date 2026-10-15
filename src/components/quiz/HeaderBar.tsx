@@ -45,7 +45,7 @@ export const HeaderBar: React.FC<HeaderBarProps> = ({
           {title}
         </h1>
         {isProctored && (
-          <span className="flex items-center gap-1.5 px-2.5 py-1 bg-red-50 text-red-700 border border-red-200 rounded text-xs font-bold uppercase tracking-wider shadow-sm">
+          <span className="flex items-center gap-1.5 px-2.5 py-1 bg-red-600 text-white rounded text-xs font-bold uppercase tracking-wider">
             <ShieldAlert aria-hidden="true" className="w-3.5 h-3.5" />{' '}
             Proctoring On
           </span>
@@ -86,7 +86,7 @@ export const HeaderBar: React.FC<HeaderBarProps> = ({
               <span
                 className={`transition-all ${
                   isWarning
-                    ? 'font-black text-black motion-safe:animate-[pulse_0.4s_ease-in-out_infinite]'
+                    ? 'font-black text-red-700'
                     : 'font-normal text-gray-700'
                 }`}
               >

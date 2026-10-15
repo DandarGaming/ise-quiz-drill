@@ -4,6 +4,10 @@ import { act, fireEvent, render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { AppContainer } from '../../src/components/app/AppContainer';
 import { sampleQuiz } from '../../src/data/sampleQuiz';
+import {
+  setAnalyticsSender,
+  type AnalyticsEvent,
+} from '../../src/utils/analytics';
 import { loadHistory, loadSavedQuizzes } from '../../src/utils/attemptStorage';
 
 // These tests drive the whole app (creator, quiz, results, library) with a
@@ -248,5 +252,102 @@ describe('saved library', () => {
 
     expect(loadSavedQuizzes(localStorage)).toHaveLength(0);
     expect(screen.getByText('No Saved Quizzes Found')).toBeInTheDocument();
+  });
+});
+
+describe('usage events', () => {
+  let sent: AnalyticsEvent[];
+  beforeEach(() => {
+    sent = [];
+    setAnalyticsSender((event) => sent.push(event));
+  });
+  afterEach(() => setAnalyticsSender(null));
+
+  const names = () => sent.map((event) => event.event);
+
+  it('reports a quiz started and submitted, without its content', async () => {
+    const user = userEvent.setup();
+    render(<AppContainer />);
+    await startQuiz(user);
+    await answerEverythingCorrectly(user);
+    await submit(user);
+
+    expect(names()).toEqual([
+      'app_opened',
+      'quiz_imported',
+      'quiz_started',
+      'quiz_submitted',
+    ]);
+    expect(sent).toContainEqual({
+      event: 'quiz_imported',
+      props: { valid: true },
+    });
+    expect(sent).toContainEqual({
+      event: 'quiz_started',
+      props: { questionCount: 5, layout: 'paginated', antiCheat: false },
+    });
+    expect(sent).toContainEqual({
+      event: 'quiz_submitted',
+      props: { questionCount: 5, percentBucket: '90-100', durationMinutes: 0 },
+    });
+    expect(JSON.stringify(sent)).not.toMatch(
+      /Integration quiz|DevOps Basics|Amazon|Delivery/,
+    );
+  });
+
+  it('reports a quiz started again from the results', async () => {
+    const user = userEvent.setup();
+    render(<AppContainer />);
+    await startQuiz(user);
+    await submit(user);
+
+    await user.click(screen.getAllByRole('button', { name: 'Retake Quiz' })[0]);
+
+    expect(names().filter((name) => name === 'quiz_started')).toHaveLength(2);
+    expect(sent).toContainEqual({
+      event: 'quiz_submitted',
+      props: { questionCount: 5, percentBucket: '0-49', durationMinutes: 0 },
+    });
+  });
+
+  it('reports a quiz started from the saved library', async () => {
+    vi.spyOn(window, 'confirm').mockReturnValue(true);
+    const user = userEvent.setup();
+    render(<AppContainer />);
+    await startQuiz(user);
+    await user.click(screen.getByRole('button', { name: 'Exit quiz' }));
+    await user.click(
+      within(mainNav()).getByRole('button', { name: /Saved Library/ }),
+    );
+    sent.length = 0;
+
+    await user.click(screen.getByRole('button', { name: /^Start/ }));
+
+    expect(names()).toEqual(['quiz_started']);
+  });
+
+  it('reports presets, copied prompts and imports in the creator', async () => {
+    const user = userEvent.setup();
+    render(<AppContainer />);
+
+    await user.selectOptions(
+      screen.getByLabelText('Exam preset (optional)'),
+      'devops',
+    );
+    await user.click(screen.getByRole('button', { name: 'Apply preset' }));
+    await user.click(screen.getByRole('button', { name: /Update Prompt/ }));
+    await user.click(screen.getByRole('button', { name: /Copy AI Prompt/ }));
+    await toImportStep(user);
+    paste('{"title": "Oops",');
+    paste('{"title": "Oops again",');
+    paste(JSON.stringify(sampleQuiz));
+
+    expect(sent).toEqual([
+      { event: 'app_opened' },
+      { event: 'preset_applied', props: { presetId: 'devops' } },
+      { event: 'prompt_copied', props: { questionCount: 10 } },
+      { event: 'quiz_imported', props: { valid: false } },
+      { event: 'quiz_imported', props: { valid: true } },
+    ]);
   });
 });

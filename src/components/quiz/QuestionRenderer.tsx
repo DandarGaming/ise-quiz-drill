@@ -216,8 +216,8 @@ export const QuestionRenderer: React.FC<QuestionRendererProps> = ({
             <span
               className={`px-2.5 py-0.5 rounded text-xs font-semibold ${
                 earnedPoints > 0
-                  ? 'bg-green-100 text-green-800'
-                  : 'bg-red-100 text-red-800'
+                  ? 'bg-green-600 text-white'
+                  : 'bg-red-600 text-white'
               }`}
             >
               {earnedPoints} / {question.points} point
@@ -350,8 +350,10 @@ export const QuestionRenderer: React.FC<QuestionRendererProps> = ({
                       selected && !reviewMode
                         ? 'bg-[#dbeefe]'
                         : 'bg-white hover:bg-[#f0f7fd]'
-                    } ${reviewMode && correct ? 'bg-blue-50/80' : ''} ${
-                      reviewMode && isWrongSelection ? 'bg-red-50/80' : ''
+                    } ${reviewMode && correct ? 'shadow-[inset_4px_0_0_#006fbf]' : ''} ${
+                      reviewMode && isWrongSelection
+                        ? 'shadow-[inset_4px_0_0_#dc2626]'
+                        : ''
                     }`}
                   >
                     {/* The label fills the whole highlighted row, so a click

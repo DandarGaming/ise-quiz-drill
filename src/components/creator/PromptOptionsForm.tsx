@@ -243,7 +243,7 @@ export const PromptOptionsForm: React.FC<PromptOptionsFormProps> = ({
           id="prompt-notes"
           value={value.notes}
           onChange={(e) => set('notes', e.target.value)}
-          rows={2.5}
+          rows={6}
           className="w-full px-3.5 py-2 border border-gray-300 rounded-lg text-xs focus:ring-2 focus:ring-[#006fbf] focus:border-transparent outline-none text-gray-900 font-medium"
         />
 

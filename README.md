@@ -105,9 +105,11 @@ podman push ise-quiz-drill "$REGISTRY/ise-quiz-drill:v2.0.0"
 
 ## Running service
 
-The image runs on ECS Express Mode. The live URL is the `ServiceUrl` output of
-`ServiceStack`; a CloudWatch alarm fires when no task passes `/api/health` for
-three minutes. Roll back by deploying an older commit tag:
+The image runs on ECS Express Mode. The live URL is linked under
+**Deployments → production** on the repository page and in the summary of each
+deploy run (it is also the `ServiceUrl` output of `ServiceStack`). A CloudWatch
+alarm fires when no task passes `/api/health` for three minutes. Roll back by
+deploying an older commit tag:
 
 ```sh
 cd cdk

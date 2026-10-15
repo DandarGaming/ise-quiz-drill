@@ -82,6 +82,27 @@ describe('container deploy', () => {
   it('smoke tests the health endpoint of the deployed service', () => {
     expect(run()).toMatch(/curl -fsS .*\$URL\/api\/health/);
   });
+
+  // GitHub then links the live URL from the repo page and the workflow run
+  it('deploys to the production environment with the service URL', () => {
+    const urlStep = (deploy.steps as (Step & { id?: string })[]).find(
+      (s) => s.id === 'service',
+    );
+    expect(urlStep?.run).toContain('echo "url=$URL" >> "$GITHUB_OUTPUT"');
+    expect(deploy.environment).toEqual({
+      name: 'production',
+      url: '${{ steps.service.outputs.url }}',
+    });
+  });
+
+  it('writes the URL and image tag to the job summary', () => {
+    const summary = run()
+      .split('\n')
+      .filter((line) => line.includes('$GITHUB_STEP_SUMMARY'))
+      .join('\n');
+    expect(summary).toContain('$URL');
+    expect(summary).toContain('${GITHUB_SHA::7}');
+  });
 });
 
 describe('deploys wait for CI', () => {

@@ -1,7 +1,13 @@
 // @vitest-environment jsdom
 import { useState } from 'react';
 import { describe, it, expect, vi } from 'vitest';
-import { fireEvent, render, screen, waitFor } from '@testing-library/react';
+import {
+  fireEvent,
+  render,
+  screen,
+  waitFor,
+  within,
+} from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { JsonImporter } from './JsonImporter';
 import { sampleQuiz } from '../../data/sampleQuiz';
@@ -73,6 +79,34 @@ describe('JsonImporter', () => {
       'true',
     );
     expect(screen.queryByRole('status')).toBeNull();
+  });
+
+  it('lists every problem and asks the AI to fix all of them', async () => {
+    const user = userEvent.setup();
+    const writeText = vi.spyOn(navigator.clipboard, 'writeText');
+    render(<Harness />);
+    paste(
+      JSON.stringify({
+        title: '',
+        questions: [
+          { ...sampleQuiz.questions[0], correctAnswer: 'zzz' },
+          { ...sampleQuiz.questions[1], type: 'essay' },
+        ],
+      }),
+    );
+
+    const alert = screen.getByRole('alert');
+    expect(within(alert).getByText('3 problems found:')).toBeInTheDocument();
+    expect(within(alert).getAllByRole('listitem')).toHaveLength(3);
+    expect(alert).toHaveTextContent('title: Add a quiz title.');
+
+    await user.click(
+      screen.getByRole('button', { name: 'Copy Error for AI Fix' }),
+    );
+    const request = writeText.mock.lastCall?.[0] ?? '';
+    expect(request).toContain('3 validation errors');
+    expect(request).toContain('1. title: Add a quiz title.');
+    expect(request).toContain('3. Question 2:');
   });
 
   it('copies a fix request for the AI', async () => {

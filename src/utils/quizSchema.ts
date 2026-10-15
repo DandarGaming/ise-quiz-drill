@@ -157,8 +157,9 @@ export interface ImportSettings {
   antiCheat: AntiCheatOptions;
 }
 
+// `errors` lists every problem found, so one fix request can cover them all
 export type ParseResult =
-  { ok: true; quiz: QuizConfig } | { ok: false; error: string };
+  { ok: true; quiz: QuizConfig } | { ok: false; errors: string[] };
 
 function describeIssue(issue: z.core.$ZodIssue): string {
   const [first, index, field] = issue.path;
@@ -194,13 +195,13 @@ export function parseQuizJson(
   } catch (error) {
     return {
       ok: false,
-      error: `The text is not valid JSON: ${(error as Error).message}`,
+      errors: [`The text is not valid JSON: ${(error as Error).message}`],
     };
   }
 
   const parsed = quizSchema.safeParse(data);
   if (!parsed.success) {
-    return { ok: false, error: describeIssue(parsed.error.issues[0]) };
+    return { ok: false, errors: parsed.error.issues.map(describeIssue) };
   }
 
   const raw = parsed.data;

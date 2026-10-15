@@ -45,11 +45,12 @@ const parse = (value: unknown, overrides: Partial<ImportSettings> = {}) =>
     ...overrides,
   });
 
-const errorOf = (value: unknown) => {
+const errorsOf = (value: unknown) => {
   const result = parse(value);
   if (result.ok) throw new Error('expected an error');
-  return result.error;
+  return result.errors;
 };
+const errorOf = (value: unknown) => errorsOf(value)[0];
 
 const withQuestion = (patch: Record<string, unknown>) => ({
   ...aiQuiz,
@@ -67,7 +68,7 @@ describe('parseQuizJson', () => {
 
   it('fills in ids, numbers, pages and points, and drops null code fields', () => {
     const result = parse(aiQuiz);
-    if (!result.ok) throw new Error(result.error);
+    if (!result.ok) throw new Error(result.errors.join('; '));
 
     expect(result.quiz.id).toBe('quiz-fallback');
     expect(
@@ -81,7 +82,7 @@ describe('parseQuizJson', () => {
 
   it('applies the time limit, layout and proctoring chosen in the creator', () => {
     const result = parse(aiQuiz);
-    if (!result.ok) throw new Error(result.error);
+    if (!result.ok) throw new Error(result.errors.join('; '));
 
     expect(result.quiz).toMatchObject({
       timeLimitMinutes: 20,
@@ -97,6 +98,29 @@ describe('parseQuizJson', () => {
 
   it('explains invalid JSON', () => {
     expect(errorOf('{ "title": ')).toMatch(/^The text is not valid JSON/);
+  });
+
+  it('reports every problem in one pass so the AI can fix them together', () => {
+    const errors = errorsOf({
+      ...aiQuiz,
+      title: '',
+      questions: [
+        { ...aiQuiz.questions[0], correctAnswer: 'z' },
+        { ...aiQuiz.questions[0], id: 'q2', type: 'essay' },
+        { ...aiQuiz.questions[0], id: 'q3', options: [] },
+      ],
+    });
+
+    expect(errors).toEqual([
+      'title: Add a quiz title.',
+      expect.stringMatching(/^Question 1: .*"z" is not one of the option ids/),
+      expect.stringMatching(/^Question 2: type: /),
+      expect.stringMatching(/^Question 3: .*at least two options/),
+    ]);
+  });
+
+  it('gives a single problem for text that is not JSON', () => {
+    expect(errorsOf('{ "title": ')).toHaveLength(1);
   });
 
   it('needs a title and at least one question', () => {

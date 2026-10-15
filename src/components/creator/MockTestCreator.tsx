@@ -8,9 +8,19 @@ import {
   validatePromptOptions,
   validateTestConfig,
 } from '../../utils/promptBuilder';
+import {
+  applyPresetConfig,
+  applyPresetPrompt,
+  describePresetConfig,
+  describePresetPrompt,
+  presets,
+  resetPromptOptions,
+  resetTestConfig,
+} from '../../utils/presets';
 import { parseQuizJson, type ImportSettings } from '../../utils/quizSchema';
 import { CompiledPromptBox } from './CompiledPromptBox';
 import { JsonImporter } from './JsonImporter';
+import { PresetPicker } from './PresetPicker';
 import { PromptOptionsForm } from './PromptOptionsForm';
 import { TestConfigForm } from './TestConfigForm';
 
@@ -144,7 +154,15 @@ export const MockTestCreator: React.FC<MockTestCreatorProps> = ({
             </p>
           </div>
 
-          {/* Slot for the preset picker */}
+          <PresetPicker
+            scope="the prompt options"
+            presets={presets}
+            value={options}
+            onChange={setOptions}
+            applyPreset={applyPresetPrompt}
+            reset={resetPromptOptions}
+            describe={describePresetPrompt}
+          />
 
           <PromptOptionsForm value={options} onChange={setOptions} />
 
@@ -192,7 +210,15 @@ export const MockTestCreator: React.FC<MockTestCreatorProps> = ({
           />
 
           <div className="border-t border-gray-100 pt-6 space-y-6">
-            {/* Slot for the preset picker: before the settings it fills */}
+            <PresetPicker
+              scope="the test settings"
+              presets={presets}
+              value={config}
+              onChange={setConfig}
+              applyPreset={applyPresetConfig}
+              reset={resetTestConfig}
+              describe={describePresetConfig}
+            />
             <TestConfigForm
               value={config}
               onChange={setConfig}

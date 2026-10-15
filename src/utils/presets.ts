@@ -69,3 +69,18 @@ export const resetTestConfig = (): TestConfig => ({
   ...defaultTestConfig,
   antiCheat: { ...defaultTestConfig.antiCheat },
 });
+
+const list = new Intl.ListFormat('en', { style: 'long', type: 'conjunction' });
+
+// One line for the picker, so the user sees what a preset sets before applying
+export function describePresetPrompt(preset: Preset): string {
+  const { questionCount, types, difficulty } = applyPresetPrompt(preset);
+  return `${preset.name}: ${questionCount} questions, ${list.format(types)}, difficulty ${difficulty}.`;
+}
+
+export function describePresetConfig(preset: Preset): string {
+  const { timeLimitMinutes, templateMode, antiCheat } =
+    applyPresetConfig(preset);
+  const layout = templateMode === 'paginated' ? 'paginated' : 'single page';
+  return `${preset.name}: ${timeLimitMinutes} min, ${layout}, anti-cheat ${antiCheat.enabled ? 'on' : 'off'}.`;
+}

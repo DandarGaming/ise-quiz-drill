@@ -2,6 +2,8 @@ import { describe, it, expect } from 'vitest';
 import {
   applyPresetConfig,
   applyPresetPrompt,
+  describePresetConfig,
+  describePresetPrompt,
   presets,
   resetPromptOptions,
   resetTestConfig,
@@ -118,6 +120,34 @@ describe('applyPresetConfig', () => {
     const result = applyPresetConfig(full);
     result.antiCheat.tabLock = true;
     expect(full.config.antiCheat.tabLock).toBe(false);
+  });
+});
+
+describe('describePresetPrompt', () => {
+  it('names the preset and sums up what it sets for the prompt', () => {
+    expect(describePresetPrompt(full)).toBe(
+      'Full: 25 questions, multi-select and true-false, difficulty custom.',
+    );
+  });
+
+  it('uses the app default for a field the preset leaves null', () => {
+    expect(describePresetPrompt(empty)).toContain(
+      `${defaultPromptOptions.questionCount} questions`,
+    );
+  });
+});
+
+describe('describePresetConfig', () => {
+  it('names the preset and sums up what it sets for the test', () => {
+    expect(describePresetConfig(full)).toBe(
+      'Full: 45 min, single page, anti-cheat on.',
+    );
+  });
+
+  it('says paginated and anti-cheat off when the preset leaves them to the default', () => {
+    expect(describePresetConfig(empty)).toBe(
+      `Empty: ${defaultTestConfig.timeLimitMinutes} min, paginated, anti-cheat off.`,
+    );
   });
 });
 

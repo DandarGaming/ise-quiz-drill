@@ -41,6 +41,33 @@ describe('PromptOptionsForm', () => {
     expect(last(onChange)).toMatchObject({ questionCount: 20 });
   });
 
+  it('asks for the question types before the topics', () => {
+    render(<Harness />);
+    const types = screen.getByRole('group', {
+      name: 'Included Question Types',
+    });
+    const topics = screen.getByLabelText(/Specific Topics/);
+
+    expect(
+      types.compareDocumentPosition(topics) & Node.DOCUMENT_POSITION_FOLLOWING,
+    ).toBeTruthy();
+  });
+
+  it('starts empty except for the difficulty', () => {
+    render(<Harness />);
+    const group = screen.getByRole('group', {
+      name: 'Included Question Types',
+    });
+
+    expect(screen.getByLabelText('Number of Questions')).toHaveValue(null);
+    for (const box of within(group).getAllByRole('checkbox')) {
+      expect(box).not.toBeChecked();
+    }
+    expect(
+      screen.getByRole('button', { name: 'Auto (AI Decides)' }),
+    ).toHaveAttribute('aria-pressed', 'true');
+  });
+
   it('leaves the test settings to the test configuration', () => {
     render(<Harness />);
 
@@ -109,37 +136,31 @@ describe('PromptOptionsForm', () => {
     }
   });
 
-  it('toggles question types and warns when none is left', async () => {
+  it('toggles question types and warns again when none is left', async () => {
     const onChange = vi.fn();
     render(<Harness onChange={onChange} />);
     const group = screen.getByRole('group', {
       name: 'Included Question Types',
     });
+    const warning = /You must select at least one question type/;
+    expect(screen.getByText(warning)).toBeInTheDocument();
 
-    expect(
-      within(group).getByRole('checkbox', { name: 'Multiple Choice' }),
-    ).toBeChecked();
-    for (const name of [
-      'Multi-Select',
-      'True / False',
-      'Short Answer',
-      'Multi-Blank',
-    ]) {
-      expect(within(group).getByRole('checkbox', { name })).not.toBeChecked();
-    }
     await userEvent.click(
       within(group).getByRole('checkbox', { name: 'True / False' }),
     );
-    expect(last(onChange).types).toEqual(['mcq', 'true-false']);
+    await userEvent.click(
+      within(group).getByRole('checkbox', { name: 'Multi-Blank' }),
+    );
+    expect(last(onChange).types).toEqual(['true-false', 'multi-blank']);
+    expect(screen.queryByText(warning)).toBeNull();
 
     for (const box of within(group).getAllByRole('checkbox', {
       checked: true,
     })) {
       await userEvent.click(box);
     }
-    expect(
-      screen.getByText(/You must select at least one question type/),
-    ).toBeInTheDocument();
+    expect(last(onChange).types).toEqual([]);
+    expect(screen.getByText(warning)).toBeInTheDocument();
   });
 
   it('adds preset instructions to the notes', async () => {

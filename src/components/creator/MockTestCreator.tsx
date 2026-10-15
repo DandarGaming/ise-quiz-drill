@@ -46,11 +46,11 @@ export const MockTestCreator: React.FC<MockTestCreatorProps> = ({
   );
 
   const optionsKey = JSON.stringify(options);
-  const optionsError = validatePromptOptions(options);
+  const optionsErrors = validatePromptOptions(options);
   const isStale = built?.key !== optionsKey;
 
   const handleUpdate = () => {
-    if (optionsError) return;
+    if (optionsErrors.length > 0) return;
     setBuilt({ key: optionsKey, prompt: buildPrompt(options, quizId) });
   };
 
@@ -151,7 +151,7 @@ export const MockTestCreator: React.FC<MockTestCreatorProps> = ({
           <CompiledPromptBox
             prompt={built?.prompt ?? null}
             isStale={isStale}
-            error={optionsError}
+            errors={optionsErrors}
             onUpdate={handleUpdate}
           />
 

@@ -9,8 +9,11 @@ import {
   type TestConfig,
 } from './promptBuilder';
 
+// The defaults are empty; most tests want options that can build a prompt
 const options = (overrides: Partial<PromptOptions> = {}): PromptOptions => ({
   ...defaultPromptOptions,
+  questionCount: 10,
+  types: ['mcq', 'multi-select', 'true-false', 'short-answer'],
   ...overrides,
 });
 
@@ -75,18 +78,31 @@ describe('buildPrompt', () => {
 });
 
 describe('validatePromptOptions', () => {
-  it('accepts the defaults', () => {
-    expect(validatePromptOptions(defaultPromptOptions)).toBeNull();
+  it('accepts options with a count and a question type', () => {
+    expect(validatePromptOptions(options())).toEqual([]);
   });
 
-  it('starts with only multiple choice ticked', () => {
-    expect(defaultPromptOptions.types).toEqual(['mcq']);
+  it('starts with only the difficulty chosen: auto', () => {
+    expect(defaultPromptOptions).toMatchObject({
+      questionCount: 0,
+      difficulty: 'auto',
+      topics: '',
+      types: [],
+      notes: '',
+    });
+  });
+
+  it('lists everything still missing from the defaults', () => {
+    expect(validatePromptOptions(defaultPromptOptions)).toEqual([
+      'Choose between 1 and 50 questions.',
+      'Select at least one question type.',
+    ]);
   });
 
   it('needs at least one question type', () => {
-    expect(validatePromptOptions(options({ types: [] }))).toBe(
+    expect(validatePromptOptions(options({ types: [] }))).toEqual([
       'Select at least one question type.',
-    );
+    ]);
   });
 
   it('needs a custom difficulty mix that adds up to 100%', () => {
@@ -97,18 +113,20 @@ describe('validatePromptOptions', () => {
           mix: { easy: 30, medium: 30, hard: 30 },
         }),
       ),
-    ).toBe('The difficulty mix must add up to 100% (now 90%).');
+    ).toEqual(['The difficulty mix must add up to 100% (now 90%).']);
     expect(
       validatePromptOptions(
         options({ difficulty: 'easy', mix: { easy: 0, medium: 0, hard: 0 } }),
       ),
-    ).toBeNull();
+    ).toEqual([]);
   });
 
   it('needs a question count between 1 and 50', () => {
-    expect(validatePromptOptions(options({ questionCount: 0 }))).toBe(
-      'Choose between 1 and 50 questions.',
-    );
+    for (const questionCount of [0, 51]) {
+      expect(validatePromptOptions(options({ questionCount }))).toEqual([
+        'Choose between 1 and 50 questions.',
+      ]);
+    }
   });
 });
 

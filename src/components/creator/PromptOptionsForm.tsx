@@ -191,19 +191,6 @@ export const PromptOptionsForm: React.FC<PromptOptionsFormProps> = ({
         )}
       </div>
 
-      <div className="pt-2">
-        <label htmlFor="prompt-topics" className={fieldLabel}>
-          Specific Topics / Focus Areas (Optional)
-        </label>
-        <input
-          id="prompt-topics"
-          type="text"
-          value={value.topics}
-          onChange={(e) => set('topics', e.target.value)}
-          className={textInput}
-        />
-      </div>
-
       <fieldset className="space-y-2 pt-2">
         <legend className="block text-xs font-bold uppercase tracking-wider text-gray-700">
           Included Question Types
@@ -234,6 +221,19 @@ export const PromptOptionsForm: React.FC<PromptOptionsFormProps> = ({
           </div>
         )}
       </fieldset>
+
+      <div className="pt-2">
+        <label htmlFor="prompt-topics" className={fieldLabel}>
+          Specific Topics / Focus Areas (Optional)
+        </label>
+        <input
+          id="prompt-topics"
+          type="text"
+          value={value.topics}
+          onChange={(e) => set('topics', e.target.value)}
+          className={textInput}
+        />
+      </div>
 
       <div className="pt-2 space-y-2">
         <label htmlFor="prompt-notes" className={fieldLabel}>

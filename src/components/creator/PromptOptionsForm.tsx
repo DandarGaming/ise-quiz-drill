@@ -44,30 +44,72 @@ const CHIPS = [
   },
 ];
 
+// Mouse focus on a button or checkbox is not :focus-visible, keyboard focus is
+const isKeyboardFocus = (el: EventTarget) => {
+  try {
+    return (el as Element).matches(':focus-visible');
+  } catch {
+    return true;
+  }
+};
+
 const pctInput =
   'w-full px-3 py-1.5 border border-gray-300 rounded text-xs font-bold focus:ring-2 focus:ring-[#006fbf] outline-none';
 const typeChoice =
   'flex items-center gap-2 text-xs font-semibold text-gray-800 cursor-pointer bg-gray-50 border border-gray-200 p-2.5 rounded-lg hover:bg-gray-100';
+
+// Yellow because the field is only unfinished, not wrong
+const FieldWarning: React.FC<{ id: string; children: React.ReactNode }> = ({
+  id,
+  children,
+}) => (
+  <p
+    id={id}
+    className="flex items-center gap-2 text-xs font-semibold text-amber-700 mt-2"
+  >
+    <AlertTriangle
+      aria-hidden="true"
+      className="w-4 h-4 text-amber-600 flex-shrink-0"
+    />
+    <span>{children}</span>
+  </p>
+);
 
 export const PromptOptionsForm: React.FC<PromptOptionsFormProps> = ({
   value,
   onChange,
 }) => {
   const [isPctFocused, setIsPctFocused] = useState(false);
+  // Fields run top to bottom. A field's warning stays hidden until the user
+  // reaches something below it, so a fresh form shows none.
+  const [revealed, setRevealed] = useState(0);
+  const reveal = (below: number) => setRevealed((r) => Math.max(r, below));
+  // Not on mouse down: a warning would push the pressed button away before the
+  // mouse is released and the click would be lost. A finished click or a
+  // keyboard focus is safe.
+  const reach = (index: number) => ({
+    onClickCapture: () => reveal(index),
+    onFocusCapture: (e: React.FocusEvent) => {
+      if (isKeyboardFocus(e.target)) reveal(index);
+    },
+  });
   const set = <K extends keyof PromptOptions>(key: K, next: PromptOptions[K]) =>
     onChange({ ...value, [key]: next });
 
+  const isCountMissing = value.questionCount < 1 && revealed > 0;
+  const isNoTypeSelected = value.types.length === 0 && revealed > 1;
   const totalCustomPct = value.mix.easy + value.mix.medium + value.mix.hard;
   const isPctInvalid = value.difficulty === 'custom' && totalCustomPct !== 100;
-  const isNoTypeSelected = value.types.length === 0;
 
-  const toggleType = (type: QuestionType, on: boolean) =>
+  const toggleType = (type: QuestionType, on: boolean) => {
+    reveal(2);
     set(
       'types',
       TYPES.map((t) => t.id).filter((t) =>
         t === type ? on : value.types.includes(t),
       ),
     );
+  };
 
   // The typed text is kept apart from the number, so a field can be emptied
   const [mixText, setMixText] = useState(() => ({
@@ -96,12 +138,54 @@ export const PromptOptionsForm: React.FC<PromptOptionsFormProps> = ({
           min={1}
           max={50}
           value={value.questionCount || ''}
-          onChange={(e) => set('questionCount', toNumber(e.target.value, 50))}
+          onChange={(e) => {
+            reveal(1);
+            set('questionCount', toNumber(e.target.value, 50));
+          }}
+          aria-describedby={isCountMissing ? 'prompt-count-warning' : undefined}
           className={`${textInput} font-semibold`}
         />
+        {isCountMissing && (
+          <FieldWarning id="prompt-count-warning">
+            Warning: Enter a number of questions between 1 and 50.
+          </FieldWarning>
+        )}
       </div>
 
-      <div className="border-t border-gray-100 pt-4 space-y-4">
+      <div className="border-t border-gray-100 pt-4">
+        <fieldset
+          {...reach(1)}
+          aria-describedby={
+            isNoTypeSelected ? 'prompt-types-warning' : undefined
+          }
+          className="space-y-2"
+        >
+          <legend className="block text-xs font-bold uppercase tracking-wider text-gray-700">
+            Included Question Types
+          </legend>
+          <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
+            {TYPES.map((type) => (
+              <label key={type.id} className={typeChoice}>
+                <input
+                  type="checkbox"
+                  checked={value.types.includes(type.id)}
+                  onChange={(e) => toggleType(type.id, e.target.checked)}
+                  className="w-4 h-4 rounded text-[#006fbf]"
+                />
+                {type.label}
+              </label>
+            ))}
+          </div>
+
+          {isNoTypeSelected && (
+            <FieldWarning id="prompt-types-warning">
+              Warning: You must select at least one question type for the exam.
+            </FieldWarning>
+          )}
+        </fieldset>
+      </div>
+
+      <div {...reach(2)} className="pt-2 space-y-4">
         <div>
           <span
             id="prompt-difficulty"
@@ -170,17 +254,11 @@ export const PromptOptionsForm: React.FC<PromptOptionsFormProps> = ({
 
             {/* Hidden while typing in a field, so it does not flash on every key */}
             {isPctInvalid && !isPctFocused && (
-              <div className="flex items-center gap-2 text-xs font-semibold text-red-700">
-                <AlertTriangle
-                  aria-hidden="true"
-                  className="w-4 h-4 text-red-600 flex-shrink-0"
-                />
-                <span>
-                  Warning: Total difficulty percentage must equal exactly 100%
-                  (Current sum: <strong>{totalCustomPct}%</strong>). Please
-                  adjust values.
-                </span>
-              </div>
+              <FieldWarning id="prompt-mix-warning">
+                Warning: Total difficulty percentage must equal exactly 100%
+                (Current sum: <strong>{totalCustomPct}%</strong>). Please adjust
+                values.
+              </FieldWarning>
             )}
             {isPctInvalid && (
               <span id="prompt-mix-error" className="sr-only">
@@ -191,7 +269,7 @@ export const PromptOptionsForm: React.FC<PromptOptionsFormProps> = ({
         )}
       </div>
 
-      <div className="pt-2">
+      <div {...reach(3)} className="pt-2">
         <label htmlFor="prompt-topics" className={fieldLabel}>
           Specific Topics / Focus Areas (Optional)
         </label>
@@ -204,38 +282,7 @@ export const PromptOptionsForm: React.FC<PromptOptionsFormProps> = ({
         />
       </div>
 
-      <fieldset className="space-y-2 pt-2">
-        <legend className="block text-xs font-bold uppercase tracking-wider text-gray-700">
-          Included Question Types
-        </legend>
-        <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
-          {TYPES.map((type) => (
-            <label key={type.id} className={typeChoice}>
-              <input
-                type="checkbox"
-                checked={value.types.includes(type.id)}
-                onChange={(e) => toggleType(type.id, e.target.checked)}
-                className="w-4 h-4 rounded text-[#006fbf]"
-              />
-              {type.label}
-            </label>
-          ))}
-        </div>
-
-        {isNoTypeSelected && (
-          <div className="flex items-center gap-2 text-xs font-semibold text-red-700 mt-2">
-            <AlertTriangle
-              aria-hidden="true"
-              className="w-4 h-4 text-red-600 flex-shrink-0"
-            />
-            <span>
-              Warning: You must select at least one question type for the exam.
-            </span>
-          </div>
-        )}
-      </fieldset>
-
-      <div className="pt-2 space-y-2">
+      <div {...reach(4)} className="pt-2 space-y-2">
         <label htmlFor="prompt-notes" className={fieldLabel}>
           Special Instructions / Custom Notes (Optional)
         </label>
@@ -243,7 +290,7 @@ export const PromptOptionsForm: React.FC<PromptOptionsFormProps> = ({
           id="prompt-notes"
           value={value.notes}
           onChange={(e) => set('notes', e.target.value)}
-          rows={2.5}
+          rows={6}
           className="w-full px-3.5 py-2 border border-gray-300 rounded-lg text-xs focus:ring-2 focus:ring-[#006fbf] focus:border-transparent outline-none text-gray-900 font-medium"
         />
 

@@ -17,6 +17,15 @@ const toStep1 = () =>
   );
 const startButton = () =>
   screen.getByRole('button', { name: 'Start Quiz Simulation Now' });
+// The options start empty, so a test that builds a prompt fills them first
+async function fillOptions(count = '10') {
+  const field = screen.getByLabelText('Number of Questions');
+  await userEvent.clear(field);
+  await userEvent.type(field, count);
+  await userEvent.click(
+    screen.getByRole('checkbox', { name: 'Multiple Choice' }),
+  );
+}
 const paste = (text: string) =>
   fireEvent.change(screen.getByLabelText('Quiz JSON'), {
     target: { value: text },
@@ -79,16 +88,39 @@ describe('MockTestCreator', () => {
     expect(screen.queryByLabelText('Number of Questions')).toBeNull();
   });
 
-  it('starts with an empty prompt and a highlighted Update Prompt button', () => {
+  it('starts with nothing filled in and lists what is missing in the prompt box', () => {
     render(<MockTestCreator onStart={() => {}} />);
 
     expect(promptBox()).not.toHaveTextContent('Total Questions');
-    expect(updateButton()).toBeEnabled();
+    expect(within(promptBox()).getByRole('alert')).toHaveTextContent(
+      'Choose between 1 and 50 questions.',
+    );
+    expect(within(promptBox()).getByRole('alert')).toHaveTextContent(
+      'Select at least one question type.',
+    );
+    expect(updateButton()).toBeDisabled();
     expect(screen.getByRole('button', { name: 'Copy Locked' })).toBeDisabled();
+  });
+
+  it('drops each error as its option is filled in', async () => {
+    render(<MockTestCreator onStart={() => {}} />);
+
+    await userEvent.type(screen.getByLabelText('Number of Questions'), '10');
+    expect(within(promptBox()).getAllByRole('listitem')).toHaveLength(1);
+    expect(within(promptBox()).getByRole('alert')).toHaveTextContent(
+      'Select at least one question type.',
+    );
+
+    await userEvent.click(
+      screen.getByRole('checkbox', { name: 'Multiple Choice' }),
+    );
+    expect(within(promptBox()).queryByRole('alert')).toBeNull();
+    expect(updateButton()).toBeEnabled();
   });
 
   it('builds the prompt on Update and then allows copying it', async () => {
     render(<MockTestCreator onStart={() => {}} />);
+    await fillOptions();
 
     await userEvent.click(updateButton());
 
@@ -103,6 +135,7 @@ describe('MockTestCreator', () => {
 
   it('marks the prompt out of date when a prompt option changes', async () => {
     render(<MockTestCreator onStart={() => {}} />);
+    await fillOptions();
     await userEvent.click(updateButton());
 
     const count = screen.getByLabelText('Number of Questions');
@@ -119,9 +152,7 @@ describe('MockTestCreator', () => {
 
   it('keeps everything typed when moving between the steps', async () => {
     render(<MockTestCreator onStart={() => {}} />);
-    const count = screen.getByLabelText('Number of Questions');
-    await userEvent.clear(count);
-    await userEvent.type(count, '12');
+    await fillOptions('12');
     await userEvent.click(updateButton());
 
     await toStep2();
@@ -150,15 +181,10 @@ describe('MockTestCreator', () => {
 
   it('does not build a prompt while every question type is unticked', async () => {
     render(<MockTestCreator onStart={() => {}} />);
-    const types = screen.getByRole('group', {
-      name: 'Included Question Types',
-    });
-
-    for (const box of within(types).getAllByRole('checkbox', {
-      checked: true,
-    })) {
-      await userEvent.click(box);
-    }
+    await fillOptions();
+    await userEvent.click(
+      screen.getByRole('checkbox', { name: 'Multiple Choice' }),
+    );
 
     expect(updateButton()).toBeDisabled();
     expect(promptBox()).toHaveTextContent('Select at least one question type.');

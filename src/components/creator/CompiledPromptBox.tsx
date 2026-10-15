@@ -6,18 +6,19 @@ export interface CompiledPromptBoxProps {
   prompt: string | null;
   // The options changed after the prompt was built
   isStale: boolean;
-  // Why the prompt cannot be built from the current options
-  error: string | null;
+  // Everything that stops the prompt from being built from the current options
+  errors: string[];
   onUpdate: () => void;
 }
 
 export const CompiledPromptBox: React.FC<CompiledPromptBoxProps> = ({
   prompt,
   isStale,
-  error,
+  errors,
   onUpdate,
 }) => {
   const [promptCopied, setPromptCopied] = useState(false);
+  const hasErrors = errors.length > 0;
   const isEmpty = prompt === null;
   const isUpToDate = !isEmpty && !isStale;
 
@@ -39,7 +40,7 @@ export const CompiledPromptBox: React.FC<CompiledPromptBoxProps> = ({
 
   const status = promptCopied
     ? 'Prompt copied'
-    : error
+    : hasErrors
       ? ''
       : isEmpty
         ? 'No prompt yet. Press Update Prompt to build it.'
@@ -69,9 +70,9 @@ export const CompiledPromptBox: React.FC<CompiledPromptBoxProps> = ({
           <button
             type="button"
             onClick={onUpdate}
-            disabled={!!error || isUpToDate}
+            disabled={hasErrors || isUpToDate}
             className={`px-5 py-2.5 rounded-lg font-bold text-sm transition-colors flex items-center gap-2 ${
-              error
+              hasErrors
                 ? 'bg-slate-600 text-slate-300 cursor-not-allowed'
                 : isUpToDate
                   ? 'bg-green-600 text-white cursor-default'
@@ -123,14 +124,20 @@ export const CompiledPromptBox: React.FC<CompiledPromptBoxProps> = ({
       <p role="status" className="text-xs text-amber-300 min-h-[1rem]">
         {status}
       </p>
-      {error && (
-        <p
-          role="alert"
-          className="flex items-center gap-2 text-xs font-semibold text-red-300"
-        >
-          <AlertTriangle aria-hidden="true" className="w-4 h-4 flex-shrink-0" />
-          {error}
-        </p>
+      {hasErrors && (
+        <div role="alert" className="text-xs font-semibold text-red-300">
+          <ul className="space-y-1">
+            {errors.map((error) => (
+              <li key={error} className="flex items-center gap-2">
+                <AlertTriangle
+                  aria-hidden="true"
+                  className="w-4 h-4 flex-shrink-0"
+                />
+                {error}
+              </li>
+            ))}
+          </ul>
+        </div>
       )}
 
       <div className="bg-black/60 rounded-lg p-4 font-mono text-xs text-slate-300 border border-slate-800">

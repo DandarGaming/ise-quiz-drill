@@ -46,11 +46,11 @@ export const MockTestCreator: React.FC<MockTestCreatorProps> = ({
   );
 
   const optionsKey = JSON.stringify(options);
-  const optionsError = validatePromptOptions(options);
+  const optionsErrors = validatePromptOptions(options);
   const isStale = built?.key !== optionsKey;
 
   const handleUpdate = () => {
-    if (optionsError) return;
+    if (optionsErrors.length > 0) return;
     setBuilt({ key: optionsKey, prompt: buildPrompt(options, quizId) });
   };
 
@@ -151,7 +151,7 @@ export const MockTestCreator: React.FC<MockTestCreatorProps> = ({
           <CompiledPromptBox
             prompt={built?.prompt ?? null}
             isStale={isStale}
-            error={optionsError}
+            errors={optionsErrors}
             onUpdate={handleUpdate}
           />
 
@@ -191,7 +191,8 @@ export const MockTestCreator: React.FC<MockTestCreatorProps> = ({
             result={result}
           />
 
-          <div className="border-t border-gray-100 pt-6">
+          <div className="border-t border-gray-100 pt-6 space-y-6">
+            {/* Slot for the preset picker: before the settings it fills */}
             <TestConfigForm
               value={config}
               onChange={setConfig}

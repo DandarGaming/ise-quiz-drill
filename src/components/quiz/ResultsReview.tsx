@@ -1,18 +1,21 @@
 import React, { useState } from 'react';
 import {
   Award,
+  BookmarkPlus,
   Check,
   CheckCircle2,
   Clock,
   Filter,
   Home,
+  MessageSquareText,
   RotateCcw,
   ShieldAlert,
   X,
 } from 'lucide-react';
-import type { QuizConfig, QuizEvent } from '../../types/quiz';
+import type { Question, QuizConfig, QuizEvent } from '../../types/quiz';
 import type { Answer } from '../../utils/answers';
 import { gradeQuiz } from '../../utils/grading';
+import type { FeedbackContext } from '../app/FeedbackDialog';
 import { AppearanceSettings, type Theme } from '../app/AppearanceSettings';
 import { QuestionRenderer } from './QuestionRenderer';
 
@@ -21,10 +24,12 @@ export interface ResultsReviewProps {
   answers: Record<string, Answer | undefined>;
   timeTakenSeconds: number;
   eventLog?: QuizEvent[];
-  onRetake: () => void;
+  onRetake: (shuffleAnswers: boolean) => void;
   onExit?: () => void;
   theme?: Theme;
   onThemeChange?: (theme: Theme) => void;
+  onSaveQuestion?: (question: Question, wrongAnswer: Answer) => boolean | void;
+  onFeedbackRequest?: (context?: FeedbackContext) => void;
 }
 
 export type FilterMode = 'incorrect' | 'correct' | 'all';
@@ -74,8 +79,15 @@ export const ResultsReview: React.FC<ResultsReviewProps> = ({
   onExit,
   theme,
   onThemeChange,
+  onSaveQuestion,
+  onFeedbackRequest,
 }) => {
   const [filterMode, setFilterMode] = useState<FilterMode>('incorrect');
+  const [shuffleAnswers, setShuffleAnswers] = useState(false);
+  const [savedQuestionIds, setSavedQuestionIds] = useState<Set<string>>(
+    () => new Set(),
+  );
+  const [saveErrors, setSaveErrors] = useState<Set<string>>(() => new Set());
 
   const { results, earnedScore, totalPoints, percentage } = gradeQuiz(
     quiz,
@@ -87,6 +99,31 @@ export const ResultsReview: React.FC<ResultsReviewProps> = ({
   const incorrectCount = results.length - correctIds.size;
   const correctCount = correctIds.size;
   const totalCount = quiz.questions.length;
+  const displayedPercentage = Math.round(percentage);
+  const resultByQuestionId = new Map(
+    results.map((result) => [result.questionId, result]),
+  );
+  const scoreBand =
+    displayedPercentage >= 90
+      ? '90-100'
+      : displayedPercentage >= 70
+        ? '70-89'
+        : displayedPercentage >= 50
+          ? '50-69'
+          : '0-49';
+  const memeVariants = [
+    {
+      src: `/results/score-${scoreBand}-1.svg`,
+      alt: `Score ${displayedPercentage} percent: a cheerful study-themed meme.`,
+    },
+    {
+      src: `/results/score-${scoreBand}-2.svg`,
+      alt: `Score ${displayedPercentage} percent: an encouraging quiz-result meme.`,
+    },
+  ];
+  const scoreMeme = useState(
+    () => memeVariants[Math.floor(Math.random() * memeVariants.length)],
+  )[0];
 
   const filteredQuestions = quiz.questions.filter((q) =>
     filterMode === 'all'
@@ -138,11 +175,29 @@ export const ResultsReview: React.FC<ResultsReviewProps> = ({
           )}
           <button
             type="button"
-            onClick={onRetake}
+            onClick={() => onRetake(shuffleAnswers)}
             className="flex items-center gap-2 px-3.5 py-1.5 text-xs font-bold text-white bg-slate-700 hover:bg-slate-600 rounded-md border border-slate-600 transition-colors cursor-pointer"
           >
             <RotateCcw aria-hidden="true" className="w-3.5 h-3.5" /> Retake Quiz
           </button>
+          <label className="flex items-center gap-1.5 text-xs font-semibold text-slate-200">
+            <input
+              type="checkbox"
+              checked={shuffleAnswers}
+              onChange={(event) => setShuffleAnswers(event.target.checked)}
+            />
+            Shuffle answers
+          </label>
+          {onFeedbackRequest && (
+            <button
+              type="button"
+              onClick={() => onFeedbackRequest()}
+              className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold text-white bg-slate-700 hover:bg-slate-600 rounded-md border border-slate-600"
+            >
+              <MessageSquareText aria-hidden="true" className="h-3.5 w-3.5" />
+              Feedback
+            </button>
+          )}
           {onExit && (
             <button
               type="button"
@@ -221,6 +276,19 @@ export const ResultsReview: React.FC<ResultsReviewProps> = ({
                 </div>
               </div>
             </div>
+          </section>
+
+          <section
+            aria-label="Score reaction"
+            className="overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm"
+          >
+            <img
+              src={scoreMeme.src}
+              alt={scoreMeme.alt}
+              className="block h-auto w-full"
+              width="480"
+              height="220"
+            />
           </section>
 
           {/* Proctoring audit trail */}
@@ -418,6 +486,61 @@ export const ResultsReview: React.FC<ResultsReviewProps> = ({
                       onToggleFlag={() => {}}
                       reviewMode
                     />
+                    {!resultByQuestionId.get(question.id)?.isCorrect && (
+                      <div className="mt-3 flex flex-wrap items-center gap-3">
+                        {onSaveQuestion && (
+                          <button
+                            type="button"
+                            disabled={savedQuestionIds.has(question.id)}
+                            onClick={() => {
+                              const saved = onSaveQuestion(
+                                question,
+                                answers[question.id] ?? '',
+                              );
+                              setSaveErrors((current) => {
+                                const next = new Set(current);
+                                if (saved === false) next.add(question.id);
+                                else next.delete(question.id);
+                                return next;
+                              });
+                              if (saved === false) return;
+                              setSavedQuestionIds((current) =>
+                                new Set(current).add(question.id),
+                              );
+                            }}
+                            className="inline-flex items-center gap-2 rounded-md border border-[#006fbf] px-3 py-1.5 text-xs font-bold text-[#006fbf] hover:bg-blue-50 disabled:cursor-default disabled:border-gray-300 disabled:text-gray-500"
+                          >
+                            <BookmarkPlus
+                              aria-hidden="true"
+                              className="h-3.5 w-3.5"
+                            />
+                            {savedQuestionIds.has(question.id)
+                              ? 'Saved for review'
+                              : 'Save for review'}
+                          </button>
+                        )}
+                        {saveErrors.has(question.id) && (
+                          <p role="alert" className="text-xs text-red-700">
+                            Could not save this question in browser storage.
+                            Check that storage is available and try again.
+                          </p>
+                        )}
+                        {onFeedbackRequest && (
+                          <button
+                            type="button"
+                            onClick={() =>
+                              onFeedbackRequest({
+                                quizTitle: quiz.title,
+                                questionNumber: question.number,
+                              })
+                            }
+                            className="text-xs font-semibold text-gray-600 underline hover:text-[#006fbf]"
+                          >
+                            Report wrong question
+                          </button>
+                        )}
+                      </div>
+                    )}
                   </div>
                 ))}
               </div>
@@ -427,12 +550,30 @@ export const ResultsReview: React.FC<ResultsReviewProps> = ({
           <div className="flex items-center justify-center gap-4 pt-4">
             <button
               type="button"
-              onClick={onRetake}
+              onClick={() => onRetake(shuffleAnswers)}
               className="px-6 py-2.5 bg-gray-100 hover:bg-gray-200 text-gray-900 font-bold rounded-lg border border-gray-300 text-sm transition-colors cursor-pointer flex items-center gap-2"
             >
               <RotateCcw aria-hidden="true" className="w-4 h-4 text-gray-700" />{' '}
               Retake Quiz
             </button>
+            <label className="flex items-center gap-2 text-sm font-semibold text-gray-700">
+              <input
+                type="checkbox"
+                checked={shuffleAnswers}
+                onChange={(event) => setShuffleAnswers(event.target.checked)}
+              />
+              Shuffle answers
+            </label>
+            {onFeedbackRequest && (
+              <button
+                type="button"
+                onClick={() => onFeedbackRequest()}
+                className="inline-flex items-center gap-2 rounded-lg border border-gray-300 px-4 py-2.5 text-sm font-semibold text-gray-700 hover:bg-gray-50"
+              >
+                <MessageSquareText aria-hidden="true" className="h-4 w-4" />
+                Feedback
+              </button>
+            )}
             {onExit && (
               <button
                 type="button"

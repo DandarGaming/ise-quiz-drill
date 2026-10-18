@@ -1,10 +1,14 @@
 import React, { useEffect, useState } from 'react';
-import { Library, Wrench } from 'lucide-react';
-import type { QuizAttemptRecord, QuizConfig } from '../../types/quiz';
+import { Library, MessageSquareText, Wrench } from 'lucide-react';
+import type { QuizAttemptRecord, QuizConfig, Question } from '../../types/quiz';
+import type { SavedReviewQuestion } from '../../types/review';
 import { quizStarted, track } from '../../utils/analytics';
 import { loadSavedQuizzes, saveQuiz } from '../../utils/attemptStorage';
 import { browserStorage, safely } from '../../utils/browserStorage';
+import { saveWrongQuestion } from '../../utils/reviewStorage';
+import { shuffleQuizAnswers } from '../../utils/shuffleAnswers';
 import { AppearanceSettings, type Theme } from './AppearanceSettings';
+import { FeedbackDialog, type FeedbackContext } from './FeedbackDialog';
 import { MockTestCreator } from '../creator/MockTestCreator';
 import { QuizHistory } from '../history/QuizHistory';
 import { QuizSimulator } from '../quiz/QuizSimulator';
@@ -39,6 +43,12 @@ export const AppContainer: React.FC = () => {
   const [reviewRecord, setReviewRecord] = useState<QuizAttemptRecord | null>(
     null,
   );
+  const [reviewQuestions, setReviewQuestions] = useState<
+    SavedReviewQuestion[] | undefined
+  >();
+  const [feedbackContext, setFeedbackContext] = useState<
+    FeedbackContext | undefined
+  >();
   const [savedCount, setSavedCount] = useState(0);
 
   useEffect(() => track({ event: 'app_opened' }), []);
@@ -55,10 +65,12 @@ export const AppContainer: React.FC = () => {
     );
   }, [viewMode, storage]);
 
-  const handleStartQuiz = (quiz: QuizConfig) => {
-    track(quizStarted(quiz));
+  const handleStartQuiz = (quiz: QuizConfig, shuffleAnswers = false) => {
+    const quizToStart = shuffleAnswers ? shuffleQuizAnswers(quiz) : quiz;
+    track(quizStarted(quizToStart));
     setReviewRecord(null);
-    setCurrentQuiz(quiz);
+    setReviewQuestions(undefined);
+    setCurrentQuiz(quizToStart);
     setViewMode('simulator');
   };
 
@@ -68,6 +80,30 @@ export const AppContainer: React.FC = () => {
     handleStartQuiz(quiz);
   };
 
+  const handleSaveWrongQuestion = (
+    quiz: QuizConfig,
+    question: Question,
+    wrongAnswer: string | string[],
+  ): boolean => {
+    if (!storage) return false;
+    const saved = safely(() =>
+      saveWrongQuestion(storage, {
+        quizId: quiz.id,
+        quizTitle: quiz.title,
+        courseCode: quiz.courseCode || 'GENERAL',
+        question,
+        wrongAnswer,
+      }),
+    );
+    return saved !== undefined;
+  };
+
+  const handleCreateReviewTest = (selected: SavedReviewQuestion[]) => {
+    setReviewQuestions(selected);
+    setReviewRecord(null);
+    setViewMode('creator');
+  };
+
   const showView = (mode: ViewMode) => {
     setReviewRecord(null);
     setViewMode(mode);
@@ -75,30 +111,60 @@ export const AppContainer: React.FC = () => {
 
   if (reviewRecord) {
     return (
-      <div className="h-screen w-screen overflow-hidden bg-white flex flex-col">
-        <ResultsReview
-          quiz={reviewRecord.quizSnapshot}
-          answers={reviewRecord.answers}
-          timeTakenSeconds={reviewRecord.timeTakenSeconds}
-          eventLog={reviewRecord.eventLog}
-          onRetake={() => handleStartQuiz(reviewRecord.quizSnapshot)}
-          onExit={() => showView('history')}
-          theme={theme}
-          onThemeChange={setTheme}
-        />
-      </div>
+      <>
+        <div className="h-screen w-screen overflow-hidden bg-white flex flex-col">
+          <ResultsReview
+            quiz={reviewRecord.quizSnapshot}
+            answers={reviewRecord.answers}
+            timeTakenSeconds={reviewRecord.timeTakenSeconds}
+            eventLog={reviewRecord.eventLog}
+            onRetake={(shuffle) =>
+              handleStartQuiz(reviewRecord.quizSnapshot, shuffle)
+            }
+            onSaveQuestion={(question, wrongAnswer) =>
+              handleSaveWrongQuestion(
+                reviewRecord.quizSnapshot,
+                question,
+                wrongAnswer,
+              )
+            }
+            onFeedbackRequest={setFeedbackContext}
+            onExit={() => showView('history')}
+            theme={theme}
+            onThemeChange={setTheme}
+          />
+        </div>
+        {feedbackContext && (
+          <FeedbackDialog
+            context={feedbackContext}
+            onClose={() => setFeedbackContext(undefined)}
+          />
+        )}
+      </>
     );
   }
 
   if (viewMode === 'simulator' && currentQuiz) {
     return (
-      <div className="h-screen w-screen overflow-hidden bg-white flex flex-col">
-        <QuizSimulator
-          key={currentQuiz.id}
-          quiz={currentQuiz}
-          onExit={() => showView('creator')}
-        />
-      </div>
+      <>
+        <div className="h-screen w-screen overflow-hidden bg-white flex flex-col">
+          <QuizSimulator
+            key={currentQuiz.id}
+            quiz={currentQuiz}
+            onExit={() => showView('creator')}
+            onSaveQuestion={(question, wrongAnswer) =>
+              handleSaveWrongQuestion(currentQuiz, question, wrongAnswer)
+            }
+            onFeedbackRequest={setFeedbackContext}
+          />
+        </div>
+        {feedbackContext && (
+          <FeedbackDialog
+            context={feedbackContext}
+            onClose={() => setFeedbackContext(undefined)}
+          />
+        )}
+      </>
     );
   }
 
@@ -144,21 +210,40 @@ export const AppContainer: React.FC = () => {
             </button>
           </div>
           <AppearanceSettings theme={theme} onChange={setTheme} darkHeader />
+          <button
+            type="button"
+            onClick={() => setFeedbackContext({})}
+            className="flex items-center gap-2 rounded-md px-3 py-1.5 text-xs font-bold text-slate-200 transition-colors hover:bg-slate-700 hover:text-white"
+          >
+            <MessageSquareText aria-hidden="true" className="h-3.5 w-3.5" />
+            Feedback
+          </button>
         </div>
       </nav>
 
       <main className="flex-1 py-8 px-4">
         {viewMode === 'creator' && (
-          <MockTestCreator onStart={handleStartFromCreator} />
+          <MockTestCreator
+            key={reviewQuestions ? 'review-creator' : 'creator'}
+            onStart={handleStartFromCreator}
+            reviewQuestions={reviewQuestions}
+          />
         )}
         {viewMode === 'history' && (
           <QuizHistory
             onStart={handleStartQuiz}
             onCreate={() => showView('creator')}
             onReview={setReviewRecord}
+            onCreateReviewTest={handleCreateReviewTest}
           />
         )}
       </main>
+      {feedbackContext && (
+        <FeedbackDialog
+          context={feedbackContext}
+          onClose={() => setFeedbackContext(undefined)}
+        />
+      )}
     </div>
   );
 };

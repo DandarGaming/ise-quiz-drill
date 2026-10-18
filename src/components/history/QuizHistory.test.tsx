@@ -9,6 +9,10 @@ import {
   loadSavedQuizzes,
   saveQuiz,
 } from '../../utils/attemptStorage';
+import {
+  loadReviewQuestions,
+  saveWrongQuestion,
+} from '../../utils/reviewStorage';
 import { sampleQuiz } from '../../data/sampleQuiz';
 import type { QuizAttemptRecord } from '../../types/quiz';
 
@@ -31,6 +35,7 @@ const handlers = () => ({
   onStart: vi.fn(),
   onCreate: vi.fn(),
   onReview: vi.fn(),
+  onCreateReviewTest: vi.fn(),
 });
 
 beforeEach(() => localStorage.clear());
@@ -49,13 +54,14 @@ describe('QuizHistory', () => {
     expect(h.onCreate).toHaveBeenCalledOnce();
   });
 
-  it('switches between the two tabs with the mouse and the arrow keys', async () => {
+  it('switches between all three tabs with the mouse and arrow keys', async () => {
     saveQuiz(localStorage, sampleQuiz);
     appendHistory(localStorage, record);
     render(<QuizHistory {...handlers()} />);
 
     const saved = screen.getByRole('tab', { name: 'Saved Tests (1)' });
     const attempts = screen.getByRole('tab', { name: 'Attempt History (1)' });
+    const review = screen.getByRole('tab', { name: 'Review (0)' });
     expect(saved).toHaveAttribute('aria-selected', 'true');
 
     await userEvent.click(attempts);
@@ -67,6 +73,9 @@ describe('QuizHistory', () => {
     await userEvent.keyboard('{ArrowLeft}');
     expect(saved).toHaveAttribute('aria-selected', 'true');
     expect(saved).toHaveFocus();
+    await userEvent.keyboard('{ArrowLeft}');
+    expect(review).toHaveAttribute('aria-selected', 'true');
+    expect(review).toHaveFocus();
   });
 
   it('lists saved tests and starts one', async () => {
@@ -83,7 +92,70 @@ describe('QuizHistory', () => {
       within(card).getByRole('button', { name: 'Start Quiz' }),
     );
 
-    expect(h.onStart).toHaveBeenCalledWith(sampleQuiz);
+    expect(h.onStart).toHaveBeenCalledWith(sampleQuiz, false);
+  });
+
+  it('starts a saved quiz with option shuffling when selected', async () => {
+    saveQuiz(localStorage, sampleQuiz);
+    const h = handlers();
+    render(<QuizHistory {...h} />);
+    const card = screen.getByRole('article', {
+      name: 'DevOps Basics Practice',
+    });
+
+    await userEvent.click(
+      within(card).getByRole('checkbox', { name: 'Shuffle answers' }),
+    );
+    await userEvent.click(
+      within(card).getByRole('button', { name: 'Start Quiz' }),
+    );
+
+    expect(h.onStart).toHaveBeenCalledWith(sampleQuiz, true);
+  });
+
+  it('shows saved mistakes, creates a review test and removes entries', async () => {
+    const question = {
+      ...sampleQuiz.questions[0],
+      explanation: 'The right option is supported by the study material.',
+    };
+    const saved = {
+      quizId: sampleQuiz.id,
+      quizTitle: sampleQuiz.title,
+      courseCode: sampleQuiz.courseCode,
+      question,
+      wrongAnswer: 'a',
+    };
+    saveWrongQuestion(localStorage, saved);
+    saveWrongQuestion(localStorage, saved);
+    const h = handlers();
+    render(<QuizHistory {...h} />);
+    await userEvent.click(screen.getByRole('tab', { name: 'Review (1)' }));
+
+    expect(screen.getByText(question.prompt)).toBeInTheDocument();
+    expect(screen.getByText('Wrong 2×')).toBeInTheDocument();
+    await userEvent.click(screen.getByText('Show answers and explanation'));
+    expect(screen.getByText('Right answer:')).toBeInTheDocument();
+    expect(screen.getByText('Your answer:')).toBeInTheDocument();
+    expect(screen.getByText(question.explanation!)).toBeInTheDocument();
+
+    await userEvent.click(
+      screen.getByRole('checkbox', {
+        name: 'Include question 1 in review test',
+      }),
+    );
+    await userEvent.click(
+      screen.getByRole('button', { name: 'Create review test (1/15)' }),
+    );
+    expect(h.onCreateReviewTest).toHaveBeenCalledWith([
+      expect.objectContaining({ question, wrongAnswer: 'a', timesWrong: 2 }),
+    ]);
+
+    await userEvent.click(
+      screen.getByRole('button', {
+        name: 'Remove question 1 from review list',
+      }),
+    );
+    expect(loadReviewQuestions(localStorage)).toEqual([]);
   });
 
   it('deletes a saved test only after confirming', async () => {

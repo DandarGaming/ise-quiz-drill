@@ -2,6 +2,7 @@ import * as cdk from 'aws-cdk-lib';
 import * as cloudwatch from 'aws-cdk-lib/aws-cloudwatch';
 import * as cloudwatchActions from 'aws-cdk-lib/aws-cloudwatch-actions';
 import * as ecs from 'aws-cdk-lib/aws-ecs';
+import * as logs from 'aws-cdk-lib/aws-logs';
 import * as sns from 'aws-cdk-lib/aws-sns';
 import * as subscriptions from 'aws-cdk-lib/aws-sns-subscriptions';
 import type { ServiceRolesStack } from './service-roles-stack';
@@ -19,6 +20,12 @@ export class ServiceStack extends cdk.Stack {
   constructor(scope: cdk.App, id: string, props: ServiceStackProps) {
     super(scope, id, props);
 
+    const applicationLogs = new logs.LogGroup(this, 'ApplicationLogs', {
+      logGroupName: '/aws/ecs/ise-quiz-drill',
+      retention: logs.RetentionDays.ONE_MONTH,
+      removalPolicy: cdk.RemovalPolicy.RETAIN,
+    });
+
     const service = new ecs.CfnExpressGatewayService(this, 'Service', {
       serviceName: 'ise-quiz-drill',
       infrastructureRoleArn: props.roles.infrastructureRole.roleArn,
@@ -26,6 +33,10 @@ export class ServiceStack extends cdk.Stack {
       primaryContainer: {
         image: `${this.account}.dkr.ecr.${this.region}.amazonaws.com/ise-quiz-drill:${props.imageTag}`,
         containerPort: 4321,
+        awsLogsConfiguration: {
+          logGroup: applicationLogs.logGroupName,
+          logStreamPrefix: 'ecs',
+        },
       },
       healthCheckPath: '/api/health',
       cpu: '256',

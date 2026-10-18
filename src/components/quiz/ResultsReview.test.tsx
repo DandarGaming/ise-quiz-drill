@@ -141,5 +141,66 @@ describe('ResultsReview', () => {
     );
 
     expect(onRetake).toHaveBeenCalledOnce();
+    expect(onRetake).toHaveBeenCalledWith(false);
+  });
+
+  it('passes the shuffle choice to the retake handler', async () => {
+    const onRetake = vi.fn();
+    renderResults(undefined, { onRetake });
+
+    await userEvent.click(screen.getAllByLabelText('Shuffle answers')[0]);
+    await userEvent.click(
+      screen.getAllByRole('button', { name: 'Retake Quiz' })[0],
+    );
+
+    expect(onRetake).toHaveBeenCalledWith(true);
+  });
+
+  it('shows a local, accessible score-band meme', () => {
+    renderResults({ q1: 'a', q2: 'a', q3: 'a' });
+    const image = screen.getByRole('img');
+
+    expect(image).toHaveAttribute(
+      'src',
+      expect.stringMatching('/results/score-90-100-'),
+    );
+    expect(image).toHaveAttribute(
+      'alt',
+      expect.stringContaining('Score 100 percent'),
+    );
+  });
+
+  it('saves missed questions and reports their title and number', async () => {
+    const onSaveQuestion = vi.fn();
+    const onFeedbackRequest = vi.fn();
+    renderResults(undefined, { onSaveQuestion, onFeedbackRequest });
+
+    await userEvent.click(
+      screen.getAllByRole('button', { name: 'Save for review' })[0],
+    );
+    await userEvent.click(
+      screen.getAllByRole('button', { name: 'Report wrong question' })[0],
+    );
+
+    expect(onSaveQuestion).toHaveBeenCalledWith(quiz.questions[1], 'b');
+    expect(onFeedbackRequest).toHaveBeenCalledWith({
+      quizTitle: 'DevOps Midterm',
+      questionNumber: 2,
+    });
+  });
+
+  it('keeps a question retryable and reports when saving fails', async () => {
+    renderResults(undefined, { onSaveQuestion: () => false });
+
+    await userEvent.click(
+      screen.getAllByRole('button', { name: 'Save for review' })[0],
+    );
+
+    expect(
+      screen.getAllByRole('button', { name: 'Save for review' }),
+    ).toHaveLength(2);
+    expect(screen.getByRole('alert')).toHaveTextContent(
+      'Could not save this question in browser storage.',
+    );
   });
 });

@@ -28,9 +28,20 @@ describe('ServiceStack', () => {
           Image:
             '123456789012.dkr.ecr.eu-west-1.amazonaws.com/ise-quiz-drill:9f8e7d6',
           ContainerPort: 4321,
+          AwsLogsConfiguration: Match.objectLike({
+            LogGroup: Match.anyValue(),
+            LogStreamPrefix: 'ecs',
+          }),
         }),
       },
     );
+  });
+
+  test('retains private application logs for 30 days', () => {
+    template().hasResourceProperties('AWS::Logs::LogGroup', {
+      LogGroupName: '/aws/ecs/ise-quiz-drill',
+      RetentionInDays: 30,
+    });
   });
 
   test('checks the app health endpoint', () => {

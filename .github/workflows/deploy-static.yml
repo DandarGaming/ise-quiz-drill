@@ -48,11 +48,29 @@ jobs:
 
       - name: Validate CDK Template (Pull Request Dry-run)
         if: github.event_name == 'pull_request'
-        run: cd cdk && npx cdk synth
+        run: cd cdk && npx cdk synth -c apiOrigin=api.example.com
+
+      - name: Resolve the server API origin
+        id: api-origin
+        if: github.event_name == 'push'
+        run: |
+          for attempt in $(seq 1 90); do
+            URL=$(aws cloudformation describe-stacks \
+              --stack-name ServiceStack \
+              --query "Stacks[0].Outputs[?OutputKey=='ServiceUrl'].OutputValue | [0]" \
+              --output text 2>/dev/null || true)
+            if [[ "$URL" == https://* ]]; then
+              echo "host=${URL#https://}" >> "$GITHUB_OUTPUT"
+              exit 0
+            fi
+            sleep 10
+          done
+          echo "The ECS service URL was not available after 15 minutes." >&2
+          exit 1
 
       - name: Deploy Infrastructure (Merged Main Execution)
         if: github.event_name == 'push'
-        run: cd cdk && npx cdk deploy CdkStack --require-approval never --outputs-file cdk-outputs.json
+        run: cd cdk && npx cdk deploy CdkStack -c apiOrigin="${{ steps.api-origin.outputs.host }}" --require-approval never --outputs-file cdk-outputs.json
 
       - name: Smoke Test Deployed Site
         if: github.event_name == 'push'

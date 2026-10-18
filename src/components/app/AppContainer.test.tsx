@@ -157,4 +157,69 @@ describe('AppContainer', () => {
 
     expect(screen.getByText('0 of 5 questions saved')).toBeInTheDocument();
   });
+
+  it('opens feedback from the app and confirms a successful send', async () => {
+    const fetch = vi
+      .fn()
+      .mockResolvedValue(new Response(null, { status: 204 }));
+    vi.stubGlobal('fetch', fetch);
+    render(<AppContainer />);
+
+    await userEvent.click(screen.getByRole('button', { name: 'Feedback' }));
+    await userEvent.type(
+      screen.getByLabelText('Message'),
+      'The creator could explain this better.',
+    );
+    await userEvent.click(screen.getByRole('button', { name: 'Send' }));
+
+    expect(fetch).toHaveBeenCalledOnce();
+    expect(
+      await screen.findByText(
+        'Thank you — your feedback was sent to the project owner.',
+      ),
+    ).toBeInTheDocument();
+  });
+
+  it('saves wrong answers locally and creates a review prompt from the library', async () => {
+    render(<AppContainer />);
+    await startImportedQuiz();
+    await finishQuiz();
+    await userEvent.click(
+      screen.getAllByRole('button', { name: 'Save for review' })[0],
+    );
+    await userEvent.click(
+      screen.getAllByRole('button', { name: 'Back to Creator' })[0],
+    );
+
+    await userEvent.click(
+      within(mainNav()).getByRole('button', { name: /Saved Library/ }),
+    );
+    await userEvent.click(screen.getByRole('tab', { name: 'Review (1)' }));
+
+    expect(
+      screen.getByText('What does this function return for an input of 7?'),
+    ).toBeInTheDocument();
+    await userEvent.click(
+      screen.getByRole('checkbox', {
+        name: 'Include question 1 in review test',
+      }),
+    );
+    await userEvent.click(
+      screen.getByRole('button', { name: 'Create review test (1/15)' }),
+    );
+
+    expect(
+      screen.getByRole('heading', {
+        name: 'Step 1 · Create test content',
+      }),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByText((text) =>
+        text.includes('What does this function return for an input of 7?'),
+      ),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByLabelText('Review questions: 60% · New questions: 40%'),
+    ).toBeInTheDocument();
+  });
 });

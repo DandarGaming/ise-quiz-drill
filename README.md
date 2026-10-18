@@ -1,8 +1,8 @@
 # ISE QUIZ DRILL
 
 A practice tool that recreates the Brightspace quiz interface, so students can
-take mock tests built from their own notes. It runs entirely in the browser:
-quizzes and attempts are stored in localStorage, with no backend.
+take mock tests built from their own notes. Quizzes, attempts and saved review
+questions stay in the browser; a small server API handles feedback submissions.
 
 Open the site to create a mock test: pick the options, copy the generated
 prompt into an AI chat together with your notes, and paste the JSON it returns.
@@ -10,6 +10,13 @@ Quizzes run with a real-time timer, are saved in the browser and keep a history
 of attempts.
 See [ADR-003](docs/adr/ADR-003-pivot-to-quiz-simulator.md) for why it replaced
 the original blog.
+
+Wrong questions saved for review remain in the browser only. Feedback messages
+are sent to the app server and made available to the project owner in a
+dedicated CloudWatch log group with a 30-day retention policy. The app does not
+save feedback in the browser or log the sender's network address; it uses that
+address transiently for abuse limiting. The static site's `/api/*` requests
+are proxied to the ECS service without caching.
 
 ## Stack
 

@@ -27,6 +27,13 @@ Options considered:
 - Run the app on ECS Express Mode, defined in CDK as `ServiceStack`
   (`AWS::ECS::ExpressGatewayService`): one 0.25 vCPU / 512 MB task, scaling to
   two, health checked on `/api/health`.
+- Send container logs to a named CloudWatch log group with 30-day retention.
+  Feedback is delivered to the project owner through this private log group;
+  feedback text is not written to browser storage, and the request address is
+  used only transiently for rate limiting.
+- Route the static site's `/api/*` CloudFront behavior to the ECS service with
+  caching disabled, so forms work on the static deployment without exposing a
+  separate API hostname to the browser.
 - Keep the two IAM roles (infrastructure role, task execution role) in their
   own `ServiceRolesStack`. On the first try they lived in `ServiceStack`: the
   deploy failed, the rollback deleted the roles, and ECS could no longer clean
@@ -60,6 +67,8 @@ Options considered:
   when it is no longer needed.
 - Negative: ECR keeps only the 20 most recent images (ADR-005), so a rollback
   can only go back 20 merges.
+- Negative: anonymous feedback is kept in the service log group for up to 30
+  days; the owner must check CloudWatch to read submissions.
 - Negative: the CDK app also builds the static site stack, so the deploy job
   has to build the site before it can synthesize.
 - Negative: the alarm reads the two target groups from the service's

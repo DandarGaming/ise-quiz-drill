@@ -20,6 +20,7 @@ new StaticSiteStack(app, 'CdkStack', {
   env: { account: '468204079455', region: 'eu-west-1' },
 
   /* For more information, see https://docs.aws.amazon.com/cdk/latest/guide/environments.html */
+  apiOrigin: app.node.tryGetContext('apiOrigin'),
 });
 
 new EcrStack(app, 'EcrStack', {

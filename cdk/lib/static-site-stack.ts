@@ -4,8 +4,12 @@ import * as cloudfront from 'aws-cdk-lib/aws-cloudfront';
 import * as origins from 'aws-cdk-lib/aws-cloudfront-origins';
 import * as s3deploy from 'aws-cdk-lib/aws-s3-deployment';
 
+export interface StaticSiteStackProps extends cdk.StackProps {
+  apiOrigin?: string;
+}
+
 export class StaticSiteStack extends cdk.Stack {
-  constructor(scope: cdk.App, id: string, props?: cdk.StackProps) {
+  constructor(scope: cdk.App, id: string, props?: StaticSiteStackProps) {
     super(scope, id, props);
 
     // 1. Create S3 Bucket
@@ -15,8 +19,11 @@ export class StaticSiteStack extends cdk.Stack {
     });
 
     // 2. Define CloudFront Function: Rewrite URL For Every Sub-pages
-    const rewriteFunction = new cloudfront.Function(this, 'RewriteUrlFunction', {
-      code: cloudfront.FunctionCode.fromInline(`
+    const rewriteFunction = new cloudfront.Function(
+      this,
+      'RewriteUrlFunction',
+      {
+        code: cloudfront.FunctionCode.fromInline(`
         function handler(event) {
           var request = event.request;
           var uri = request.uri;
@@ -31,7 +38,8 @@ export class StaticSiteStack extends cdk.Stack {
           return request;
         }
       `),
-    });
+      },
+    );
 
     // 3. Attach CloudFront Function into Distribution
     const distribution = new cloudfront.Distribution(this, 'SiteDistribution', {
@@ -44,6 +52,32 @@ export class StaticSiteStack extends cdk.Stack {
           },
         ],
       },
+      ...(props?.apiOrigin
+        ? {
+            additionalBehaviors: {
+              'api/*': {
+                origin: new origins.HttpOrigin(props.apiOrigin, {
+                  protocolPolicy: cloudfront.OriginProtocolPolicy.HTTPS_ONLY,
+                }),
+                allowedMethods: cloudfront.AllowedMethods.ALLOW_ALL,
+                cachePolicy: cloudfront.CachePolicy.CACHING_DISABLED,
+                originRequestPolicy: new cloudfront.OriginRequestPolicy(
+                  this,
+                  'ApiOriginRequestPolicy',
+                  {
+                    headerBehavior:
+                      cloudfront.OriginRequestHeaderBehavior.allowList(
+                        'Content-Type',
+                        'CloudFront-Viewer-Address',
+                      ),
+                  },
+                ),
+                viewerProtocolPolicy:
+                  cloudfront.ViewerProtocolPolicy.HTTPS_ONLY,
+              },
+            },
+          }
+        : {}),
       defaultRootObject: 'index.html',
     });
 

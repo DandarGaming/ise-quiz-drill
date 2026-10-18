@@ -36,10 +36,7 @@ import { SubmitModal } from './SubmitModal';
 export interface QuizSimulatorProps {
   quiz: QuizConfig;
   onExit?: () => void;
-  onSaveQuestion?: (
-    question: Question,
-    wrongAnswer: Answer,
-  ) => boolean | void;
+  onSaveQuestion?: (question: Question, wrongAnswer: Answer) => boolean | void;
   onFeedbackRequest?: (context?: FeedbackContext) => void;
   storage?: KeyValueStore;
 }

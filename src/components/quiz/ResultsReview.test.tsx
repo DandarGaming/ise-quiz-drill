@@ -156,17 +156,19 @@ describe('ResultsReview', () => {
     expect(onRetake).toHaveBeenCalledWith(true);
   });
 
-  it('shows a local, accessible score-band meme', () => {
-    renderResults({ q1: 'a', q2: 'a', q3: 'a' });
+  it.each([
+    ['0-20', { q1: 'a', q2: 'b' }, '40'],
+    ['50-69', { q2: 'a', q3: 'a' }, '60'],
+    ['70-89', { q1: 'a', q3: 'a' }, '80'],
+    ['90-100', { q1: 'a', q2: 'a', q3: 'a' }, '100'],
+  ])('shows the %s score-band GIF', (band, answers, percentage) => {
+    renderResults(answers);
     const image = screen.getByRole('img');
 
-    expect(image).toHaveAttribute(
-      'src',
-      expect.stringMatching('/results/score-90-100-'),
-    );
+    expect(image).toHaveAttribute('src', `/results/${band}.gif`);
     expect(image).toHaveAttribute(
       'alt',
-      expect.stringContaining('Score 100 percent'),
+      `Score ${percentage} percent: a reaction GIF for the ${band} percent score band.`,
     );
   });
 

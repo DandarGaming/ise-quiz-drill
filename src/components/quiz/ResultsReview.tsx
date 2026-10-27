@@ -110,20 +110,11 @@ export const ResultsReview: React.FC<ResultsReviewProps> = ({
         ? '70-89'
         : displayedPercentage >= 50
           ? '50-69'
-          : '0-49';
-  const memeVariants = [
-    {
-      src: `/results/score-${scoreBand}-1.svg`,
-      alt: `Score ${displayedPercentage} percent: a cheerful study-themed meme.`,
-    },
-    {
-      src: `/results/score-${scoreBand}-2.svg`,
-      alt: `Score ${displayedPercentage} percent: an encouraging quiz-result meme.`,
-    },
-  ];
-  const scoreMeme = useState(
-    () => memeVariants[Math.floor(Math.random() * memeVariants.length)],
-  )[0];
+          : '0-20';
+  const scoreGif = {
+    src: `/results/${scoreBand}.gif`,
+    alt: `Score ${displayedPercentage} percent: a reaction GIF for the ${scoreBand} percent score band.`,
+  };
 
   const filteredQuestions = quiz.questions.filter((q) =>
     filterMode === 'all'
@@ -283,11 +274,9 @@ export const ResultsReview: React.FC<ResultsReviewProps> = ({
             className="overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm"
           >
             <img
-              src={scoreMeme.src}
-              alt={scoreMeme.alt}
+              src={scoreGif.src}
+              alt={scoreGif.alt}
               className="block h-auto w-full"
-              width="480"
-              height="220"
             />
           </section>
 
